@@ -1,0 +1,73 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Sascha\\Coding Projekte\\Rimworld Mods\\CustomFoodNamesMod\\CustomFoodNamesMod\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{B6EE845C-AC46-409C-B1E3-494F69676E49}|CustomFoodNamesMod\\CustomFoodNamesMod.csproj|c:\\users\\sascha\\coding projekte\\rimworld mods\\customfoodnamesmod\\customfoodnamesmod\\customfoodnamesmod\\database\\dishnames.xml||{FA3CD31E-987B-443A-9B81-186104E8DAC1}",
+      "RelativeMoniker": "D:0:0:{B6EE845C-AC46-409C-B1E3-494F69676E49}|CustomFoodNamesMod\\CustomFoodNamesMod.csproj|solutionrelative:customfoodnamesmod\\database\\dishnames.xml||{FA3CD31E-987B-443A-9B81-186104E8DAC1}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B6EE845C-AC46-409C-B1E3-494F69676E49}|CustomFoodNamesMod\\CustomFoodNamesMod.csproj|C:\\Users\\Sascha\\Coding Projekte\\Rimworld Mods\\CustomFoodNamesMod\\CustomFoodNamesMod\\customfoodnamesmod\\patches\\patch_thing_labelnocount.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B6EE845C-AC46-409C-B1E3-494F69676E49}|CustomFoodNamesMod\\CustomFoodNamesMod.csproj|solutionrelative:customfoodnamesmod\\patches\\patch_thing_labelnocount.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B6EE845C-AC46-409C-B1E3-494F69676E49}|CustomFoodNamesMod\\CustomFoodNamesMod.csproj|C:\\Users\\Sascha\\Coding Projekte\\Rimworld Mods\\CustomFoodNamesMod\\CustomFoodNamesMod\\customfoodnamesmod\\definjector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B6EE845C-AC46-409C-B1E3-494F69676E49}|CustomFoodNamesMod\\CustomFoodNamesMod.csproj|solutionrelative:customfoodnamesmod\\definjector.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "DishNames.xml",
+              "DocumentMoniker": "C:\\Users\\Sascha\\Coding Projekte\\Rimworld Mods\\CustomFoodNamesMod\\CustomFoodNamesMod\\CustomFoodNamesMod\\Database\\DishNames.xml",
+              "RelativeDocumentMoniker": "CustomFoodNamesMod\\Database\\DishNames.xml",
+              "ToolTip": "C:\\Users\\Sascha\\Coding Projekte\\Rimworld Mods\\CustomFoodNamesMod\\CustomFoodNamesMod\\CustomFoodNamesMod\\Database\\DishNames.xml",
+              "RelativeToolTip": "CustomFoodNamesMod\\Database\\DishNames.xml",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003576|",
+              "WhenOpened": "2025-03-03T12:14:36.177Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Patch_Thing_LabelNoCount.cs",
+              "DocumentMoniker": "C:\\Users\\Sascha\\Coding Projekte\\Rimworld Mods\\CustomFoodNamesMod\\CustomFoodNamesMod\\CustomFoodNamesMod\\Patches\\Patch_Thing_LabelNoCount.cs",
+              "RelativeDocumentMoniker": "CustomFoodNamesMod\\Patches\\Patch_Thing_LabelNoCount.cs",
+              "ToolTip": "C:\\Users\\Sascha\\Coding Projekte\\Rimworld Mods\\CustomFoodNamesMod\\CustomFoodNamesMod\\CustomFoodNamesMod\\Patches\\Patch_Thing_LabelNoCount.cs",
+              "RelativeToolTip": "CustomFoodNamesMod\\Patches\\Patch_Thing_LabelNoCount.cs",
+              "ViewState": "AQIAABwAAAAAAAAAAAAgwDMAAABaAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-03T12:13:50.976Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "DefInjector.cs",
+              "DocumentMoniker": "C:\\Users\\Sascha\\Coding Projekte\\Rimworld Mods\\CustomFoodNamesMod\\CustomFoodNamesMod\\CustomFoodNamesMod\\DefInjector.cs",
+              "RelativeDocumentMoniker": "CustomFoodNamesMod\\DefInjector.cs",
+              "ToolTip": "C:\\Users\\Sascha\\Coding Projekte\\Rimworld Mods\\CustomFoodNamesMod\\CustomFoodNamesMod\\CustomFoodNamesMod\\DefInjector.cs",
+              "RelativeToolTip": "CustomFoodNamesMod\\DefInjector.cs",
+              "ViewState": "AQIAABMAAAAAAAAAAAAgwCUAAAARAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-03T11:52:18.957Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

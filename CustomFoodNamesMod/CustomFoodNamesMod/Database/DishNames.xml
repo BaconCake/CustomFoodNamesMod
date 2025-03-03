@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<IngredientDishNames>
+	<Ingredient defName="RawPotatoes">
+		<DishName>Kettle Porridge</DishName>
+		<DishName>Mashed Potato Soup</DishName>
+		<DishName>Simple Spud Stew</DishName>
+	</Ingredient>
+	<Ingredient defName="RawFungus">
+		<DishName>Fungal Medley</DishName>
+		<DishName>Mushroom Ragout</DishName>
+	</Ingredient>
+	<Ingredient defName="RawRice">
+		<DishName>Rice Porridge</DishName>
+		<DishName>Simple Rice Pudding</DishName>
+	</Ingredient>
+	<!-- Add more ingredients as needed -->
+</IngredientDishNames>
