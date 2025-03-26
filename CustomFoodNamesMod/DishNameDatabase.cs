@@ -10,6 +10,10 @@ namespace CustomFoodNamesMod
 {
     public static class DishNameDatabase
     {
+        // Single ingredient dish names - now with quality level
+        public static Dictionary<string, Dictionary<string, List<string>>> IngredientToQualityDishNames =
+            new Dictionary<string, Dictionary<string, List<string>>>();
+
         // Single ingredient dish names
         public static Dictionary<string, List<string>> IngredientToDishNames = new Dictionary<string, List<string>>();
 
@@ -31,7 +35,7 @@ namespace CustomFoodNamesMod
         private static HashSet<string> reportedMissingIngredients = new HashSet<string>();
 
         // Flag to enable/disable logging of missing ingredients
-        public static bool LogMissingIngredients = true;
+        public static bool LogMissingIngredients = false;
 
         static DishNameDatabase()
         {
@@ -42,7 +46,7 @@ namespace CustomFoodNamesMod
         {
             try
             {
-                Log.Message("[CustomFoodNamesMod] Starting LoadDatabase method...");
+                Log.Message("[CustomFoodNamesMod] Loading dish name database...");
 
                 // Search for our mod by assembly
                 var modContentPack = LoadedModManager.RunningModsListForReading
@@ -67,6 +71,7 @@ namespace CustomFoodNamesMod
                             string directXmlPath = Path.Combine(directModPath, "Database", "DishNames.xml");
                             if (File.Exists(directXmlPath))
                             {
+                                Log.Message($"[CustomFoodNamesMod] Loading DishNames.xml from fallback path: {directXmlPath}");
                                 LoadXmlFromPath(directXmlPath);
                                 return;
                             }
@@ -79,6 +84,8 @@ namespace CustomFoodNamesMod
 
                 string modRootDir = modContentPack.RootDir;
                 string xmlPath = Path.Combine(modRootDir, "Database", "DishNames.xml");
+
+                Log.Message($"[CustomFoodNamesMod] Looking for DishNames.xml at: {xmlPath}");
 
                 if (!File.Exists(xmlPath))
                 {
@@ -93,33 +100,35 @@ namespace CustomFoodNamesMod
 
                     // Create the XML file with sample data - now includes combo dishes
                     string sampleXml = @"<?xml version=""1.0"" encoding=""utf-8"" ?>
-<IngredientDishNames>
-    <Ingredient defName=""RawPotatoes"">
-        <DishName>Kettle Porridge</DishName>
-        <DishName>Mashed Potato Soup</DishName>
-        <DishName>Simple Spud Stew</DishName>
-    </Ingredient>
-    <Ingredient defName=""RawFungus"">
-        <DishName>Fungal Medley</DishName>
-        <DishName>Mushroom Ragout</DishName>
-    </Ingredient>
-    <Ingredient defName=""RawRice"">
-        <DishName>Rice Porridge</DishName>
-        <DishName>Simple Rice Pudding</DishName>
-    </Ingredient>
+                    <IngredientDishNames>
+                        <Ingredient defName=""RawPotatoes"">
+                            <DishName>Kettle Porridge</DishName>
+                            <DishName>Mashed Potato Soup</DishName>
+                            <DishName>Simple Spud Stew</DishName>
+                        </Ingredient>
+                        <Ingredient defName=""RawFungus"">
+                            <DishName>Fungal Medley</DishName>
+                            <DishName>Mushroom Ragout</DishName>
+                        </Ingredient>
+                        <Ingredient defName=""RawRice"">
+                            <DishName>Rice Porridge</DishName>
+                            <DishName>Simple Rice Pudding</DishName>
+                        </Ingredient>
     
-    <IngredientCombo>
-        <Ingredient1>RawPotatoes</Ingredient1>
-        <Ingredient2>RawFungus</Ingredient2>
-        <DishName>Potato and Mushroom Casserole</DishName>
-        <DishName>Earthy Tuber Stew</DishName>
-    </IngredientCombo>
-</IngredientDishNames>";
+                        <IngredientCombo>
+                            <Ingredient1>RawPotatoes</Ingredient1>
+                            <Ingredient2>RawFungus</Ingredient2>
+                            <DishName>Potato and Mushroom Casserole</DishName>
+                            <DishName>Earthy Tuber Stew</DishName>
+                        </IngredientCombo>
+                    </IngredientDishNames>";
 
                     File.WriteAllText(xmlPath, sampleXml);
+                    Log.Message("[CustomFoodNamesMod] Created sample DishNames.xml file");
                 }
 
                 // Load the XML data
+                Log.Message("[CustomFoodNamesMod] Loading XML from path: " + xmlPath);
                 LoadXmlFromPath(xmlPath);
             }
             catch (Exception ex)
@@ -137,18 +146,35 @@ namespace CustomFoodNamesMod
                 // Clear existing data
                 IngredientToDishNames.Clear();
                 IngredientComboDishNames.Clear();
+                IngredientToQualityDishNames.Clear();
 
                 // Load single ingredient dish names
                 foreach (var ingredientElement in doc.Root.Elements("Ingredient"))
                 {
                     string defName = ingredientElement.Attribute("defName")?.Value;
+                    string quality = ingredientElement.Attribute("mealQuality")?.Value;
+
                     if (!string.IsNullOrEmpty(defName))
                     {
                         List<string> dishNames = ingredientElement.Elements("DishName")
                             .Select(d => d.Value)
                             .ToList();
 
-                        IngredientToDishNames[defName] = dishNames;
+                        // If there's a quality attribute, store in quality dictionary
+                        if (!string.IsNullOrEmpty(quality))
+                        {
+                            if (!IngredientToQualityDishNames.ContainsKey(defName))
+                            {
+                                IngredientToQualityDishNames[defName] = new Dictionary<string, List<string>>();
+                            }
+
+                            IngredientToQualityDishNames[defName][quality] = dishNames;
+                        }
+                        // Otherwise store in regular dictionary
+                        else
+                        {
+                            IngredientToDishNames[defName] = dishNames;
+                        }
                     }
                 }
 
@@ -182,10 +208,25 @@ namespace CustomFoodNamesMod
                     IngredientComboDishNames[ingredient2][ingredient1] = dishNames;
                 }
 
-                Log.Message("[CustomFoodNamesMod] Loaded DishNames for single ingredients: " +
+                // Log loaded data summary for verification
+                Log.Message($"[CustomFoodNamesMod] Successfully loaded DishNames.xml");
+                Log.Message($"[CustomFoodNamesMod] - Single ingredients loaded: {IngredientToDishNames.Count}");
+                Log.Message($"[CustomFoodNamesMod] - Quality-specific ingredients: {IngredientToQualityDishNames.Count}");
+                Log.Message($"[CustomFoodNamesMod] - Ingredient combinations: {IngredientComboDishNames.Count}");
+
+                // Log each loaded ingredient for verification
+                Log.Message("[CustomFoodNamesMod] Loaded single ingredients: " +
                     string.Join(", ", IngredientToDishNames.Keys));
 
-                Log.Message("[CustomFoodNamesMod] Loaded DishNames for ingredient combinations: " +
+                // Log quality-specific ingredients
+                foreach (var ingredient in IngredientToQualityDishNames.Keys)
+                {
+                    Log.Message($"[CustomFoodNamesMod] Quality variations for {ingredient}: " +
+                        string.Join(", ", IngredientToQualityDishNames[ingredient].Keys));
+                }
+
+                // Log ingredient combinations
+                Log.Message("[CustomFoodNamesMod] Loaded ingredient combinations: " +
                     string.Join(", ", IngredientComboDishNames.Keys));
             }
             catch (Exception ex)
@@ -198,15 +239,15 @@ namespace CustomFoodNamesMod
         /// Gets a dish name for a list of ingredients, using the database for small combos
         /// and falling back to procedural generation for complex combinations
         /// </summary>
-        public static string GetDishNameForIngredients(List<ThingDef> ingredients)
+        public static string GetDishNameForIngredients(List<ThingDef> ingredients, string mealQuality = null)
         {
             if (ingredients == null || ingredients.Count == 0)
                 return "Mystery meal";
 
             if (ingredients.Count == 1)
             {
-                // Single ingredient
-                string randomDishName = GetRandomDishName(ingredients[0].defName);
+                // Single ingredient - now with quality
+                string randomDishName = GetRandomDishName(ingredients[0].defName, mealQuality);
                 return !string.IsNullOrEmpty(randomDishName)
                     ? randomDishName
                     : ingredients[0].label + " dish";
@@ -221,8 +262,8 @@ namespace CustomFoodNamesMod
                 if (!string.IsNullOrEmpty(randomComboDishName))
                     return randomComboDishName;
 
-                // Fall back to using the first ingredient
-                string randomDishName = GetRandomDishName(ingredients[0].defName);
+                // Fall back to using the first ingredient with quality
+                string randomDishName = GetRandomDishName(ingredients[0].defName, mealQuality);
                 return !string.IsNullOrEmpty(randomDishName)
                     ? randomDishName + " with " + ingredients[1].label
                     : ingredients[0].label + " and " + ingredients[1].label + " dish";
@@ -236,8 +277,17 @@ namespace CustomFoodNamesMod
         /// <summary>
         /// Gets a random dish name for a single ingredient, with fallback to generated names
         /// </summary>
-        public static string GetRandomDishName(string ingredientDefName)
+        public static string GetRandomDishName(string ingredientDefName, string mealQuality = null)
         {
+            // Try quality-specific lookup first if quality is provided
+            if (!string.IsNullOrEmpty(mealQuality) &&
+                IngredientToQualityDishNames.TryGetValue(ingredientDefName, out var qualityDict) &&
+                qualityDict.TryGetValue(mealQuality, out List<string> qualityDishNames) &&
+                qualityDishNames.Count > 0)
+            {
+                return qualityDishNames.RandomElement();
+            }
+
             // Try direct lookup
             if (IngredientToDishNames.TryGetValue(ingredientDefName, out List<string> dishNames) && dishNames.Count > 0)
             {

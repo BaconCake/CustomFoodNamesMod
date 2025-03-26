@@ -1,18 +1,46 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <IngredientDishNames>
 	<!-- Single ingredients -->
+	<!-- Simple meal names (no quality attribute means "Simple") -->
 	<Ingredient defName="RawPotatoes">
-		<DishName>Kettle Porridge</DishName>
-		<DishName>Mashed Potato Soup</DishName>
-		<DishName>Simple Spud Stew</DishName>
+		<DishName>Lump O' Taters</DishName>
+		<DishName>Bland Spud Mush</DishName>
+		<DishName>Basic Potato Stodge</DishName>
 	</Ingredient>
-	<Ingredient defName="RawFungus">
-		<DishName>Fungal Medley</DishName>
-		<DishName>Mushroom Ragout</DishName>
+
+	<!-- Fine meal names -->
+	<Ingredient defName="RawPotatoes" mealQuality="Fine">
+		<DishName>Herbed Potato Medley</DishName>
+		<DishName>Seasoned Spud Delight</DishName>
+		<DishName>Garlic Butter Potatoes</DishName>
 	</Ingredient>
+
+	<!-- Lavish meal names -->
+	<Ingredient defName="RawPotatoes" mealQuality="Lavish">
+		<DishName>Duchess Potato Rosettes</DishName>
+		<DishName>Truffled Potato Gratin</DishName>
+		<DishName>Golden Potato Croquettes</DishName>
+	</Ingredient>
+
+	<!-- Simple rice dishes -->
 	<Ingredient defName="RawRice">
-		<DishName>Rice Porridge</DishName>
-		<DishName>Simple Rice Pudding</DishName>
+		<DishName>Plain Rice Bowl</DishName>
+		<DishName>Basic Rice Porridge</DishName>
+		<DishName>Bland Rice Pile</DishName>
+	</Ingredient>
+
+	<!-- Fine rice dishes -->
+	<Ingredient defName="RawRice" mealQuality="Fine">
+		<DishName>Seasoned Rice Pilaf</DishName>
+		<DishName>Flavorful Rice Medley</DishName>
+		<DishName>Aromatic Steamed Rice</DishName>
+	</Ingredient>
+
+	<!-- Lavish rice dishes -->
+	<Ingredient defName="RawRice" mealQuality="Lavish">
+		<DishName>Saffron-Infused Risotto</DishName>
+		<DishName>Golden Rice Paella</DishName>
+		<DishName>Truffle and Wild Mushroom Risotto</DishName>
 	</Ingredient>
 
 	<!-- Two ingredient combinations -->

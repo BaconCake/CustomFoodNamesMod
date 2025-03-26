@@ -43,7 +43,6 @@ namespace CustomFoodNamesMod.Patches
                 // Null check for instance
                 if (__instance == null)
                 {
-                    Log.Warning("[CustomFoodNames] MergeIngredients postfix called with null __instance");
                     return;
                 }
 
@@ -51,7 +50,6 @@ namespace CustomFoodNamesMod.Patches
                 ThingWithComps parent = __instance.parent;
                 if (parent == null)
                 {
-                    Log.Warning("[CustomFoodNames] __instance.parent is null in MergeIngredients patch");
                     return;
                 }
 
@@ -61,15 +59,9 @@ namespace CustomFoodNamesMod.Patches
                     return;
                 }
 
-                if (Prefs.DevMode)
-                {
-                    Log.Message($"[CustomFoodNames] Ingredients merged for {parent.ThingID}");
-                }
-
                 // Check ingredients collection
                 if (__instance.ingredients == null)
                 {
-                    Log.Warning("[CustomFoodNames] __instance.ingredients is null in MergeIngredients patch");
                     return;
                 }
 
@@ -77,46 +69,22 @@ namespace CustomFoodNamesMod.Patches
                 var customNameComp = parent.GetComp<CompCustomMealName>();
                 if (customNameComp == null)
                 {
-                    Log.Warning("[CustomFoodNames] CustomNameComp is missing after ingredient merge");
                     return;
                 }
 
                 // Generate a new name based on the updated ingredients
                 if (__instance.ingredients.Count > 0)
                 {
-                    if (Prefs.DevMode)
-                    {
-                        Log.Message($"[CustomFoodNames] Ingredients after merge: {__instance.ingredients.Count}");
-                        foreach (var ingredient in __instance.ingredients)
-                        {
-                            if (ingredient == null)
-                            {
-                                Log.Warning("[CustomFoodNames] Null ingredient found in list");
-                                continue;
-                            }
-                            Log.Message($"[CustomFoodNames] - Ingredient: {ingredient.defName}");
-                        }
-                    }
-
                     // Use procedural generation for names
                     string newDishName = ProceduralDishNameGenerator.GenerateDishName(
                         __instance.ingredients,
                         parent.def);
 
                     customNameComp.AssignedDishName = newDishName;
-
-                    if (Prefs.DevMode)
-                    {
-                        Log.Message($"[CustomFoodNames] Updated dish name after ingredient merge: {newDishName}");
-                    }
                 }
                 else
                 {
                     customNameComp.AssignedDishName = "Mystery Meal";
-                    if (Prefs.DevMode)
-                    {
-                        Log.Warning("[CustomFoodNames] No ingredients found after merge");
-                    }
                 }
             }
             catch (System.Exception ex)

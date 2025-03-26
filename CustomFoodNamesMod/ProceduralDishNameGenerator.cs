@@ -148,16 +148,17 @@ namespace CustomFoodNamesMod
             if (ingredients == null || ingredients.Count == 0)
                 return "Mystery Dish";
 
-            // First try the database for simple or specific combinations
+            // Determine meal quality based on its def name
+            MealQuality mealQuality = DetermineMealQuality(mealDef);
+            string qualityString = mealQuality.ToString();
+
+            // First try the database for simple or specific combinations with quality
             if (ingredients.Count <= 2)
             {
-                string databaseName = DishNameDatabase.GetDishNameForIngredients(ingredients);
+                string databaseName = DishNameDatabase.GetDishNameForIngredients(ingredients, qualityString);
                 if (!string.IsNullOrEmpty(databaseName))
                     return databaseName;
             }
-
-            // Determine meal quality based on its def name
-            MealQuality mealQuality = DetermineMealQuality(mealDef);
 
             // Generate a procedural name
             return GenerateProceduralName(ingredients, mealQuality);
@@ -208,16 +209,6 @@ namespace CustomFoodNamesMod
                 mealQuality,
                 isVegetarian,
                 isCarnivore);
-
-            // Add quality-specific prefix for fine/lavish meals
-            if (mealQuality == MealQuality.Fine)
-            {
-                dishName = $"{FineMealPrefixes.RandomElement()} {dishName}";
-            }
-            else if (mealQuality == MealQuality.Lavish)
-            {
-                dishName = $"{LavishMealPrefixes.RandomElement()} {dishName}";
-            }
 
             return dishName;
         }
