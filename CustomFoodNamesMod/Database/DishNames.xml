@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<IngredientDishNames>
+	<!-- Single ingredients -->
+	<Ingredient defName="RawPotatoes">
+		<DishName>Kettle Porridge</DishName>
+		<DishName>Mashed Potato Soup</DishName>
+		<DishName>Simple Spud Stew</DishName>
+	</Ingredient>
+	<Ingredient defName="RawFungus">
+		<DishName>Fungal Medley</DishName>
+		<DishName>Mushroom Ragout</DishName>
+	</Ingredient>
+	<Ingredient defName="RawRice">
+		<DishName>Rice Porridge</DishName>
+		<DishName>Simple Rice Pudding</DishName>
+	</Ingredient>
+
+	<!-- Two ingredient combinations -->
+	<IngredientCombo>
+		<Ingredient1>RawPotatoes</Ingredient1>
+		<Ingredient2>RawFungus</Ingredient2>
+		<DishName>Potato and Mushroom Casserole</DishName>
+		<DishName>Earthy Tuber Stew</DishName>
+		<DishName>Fungal Potato Hash</DishName>
+	</IngredientCombo>
+
+	<IngredientCombo>
+		<Ingredient1>RawPotatoes</Ingredient1>
+		<Ingredient2>RawRice</Ingredient2>
+		<DishName>Starchy Duo Bowl</DishName>
+		<DishName>Potato Rice Pilaf</DishName>
+		<DishName>Tuber and Grain Medley</DishName>
+	</IngredientCombo>
+
+	<IngredientCombo>
+		<Ingredient1>RawFungus</Ingredient1>
+		<Ingredient2>RawRice</Ingredient2>
+		<DishName>Mushroom Risotto</DishName>
+		<DishName>Fungal Rice Bowl</DishName>
+		<DishName>Forest and Field Stew</DishName>
+	</IngredientCombo>
+</IngredientDishNames>
