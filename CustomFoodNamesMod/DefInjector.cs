@@ -16,26 +16,31 @@
         {
             Log.Warning("[CustomFoodNames] Starting DefInjector...");
 
-            // List of all meal defs to modify
-            string[] mealDefNames = new string[] { "MealSimple", "MealFine", "MealLavish" };
+            // Create a list to store all found meal defs
+            var allMealDefs = new List<ThingDef>();
 
-            foreach (string mealDefName in mealDefNames)
+            // Find all ThingDefs that are meals
+            foreach (var def in DefDatabase<ThingDef>.AllDefs)
             {
-                ThingDef mealDef = DefDatabase<ThingDef>.GetNamed(mealDefName, false);
-
-                if (mealDef == null)
+                if (def.defName.StartsWith("Meal"))
                 {
-                    Log.Error($"[CustomFoodNames] Could not find {mealDefName} def!");
-                    continue;
+                    allMealDefs.Add(def);
+                    Log.Warning($"[CustomFoodNames] Found meal def: {def.defName}");
                 }
+            }
 
-                Log.Warning($"[CustomFoodNames] Found {mealDefName} def. It has {(mealDef.comps?.Count ?? 0)} comps.");
+            Log.Warning($"[CustomFoodNames] Total meal defs found: {allMealDefs.Count}");
+
+            // Process each meal def
+            foreach (var mealDef in allMealDefs)
+            {
+                Log.Warning($"[CustomFoodNames] Processing {mealDef.defName}. It has {(mealDef.comps?.Count ?? 0)} comps.");
 
                 // Ensure comps list exists
                 if (mealDef.comps == null)
                 {
                     mealDef.comps = new List<CompProperties>();
-                    Log.Warning($"[CustomFoodNames] Created new comps list for {mealDefName}");
+                    Log.Warning($"[CustomFoodNames] Created new comps list for {mealDef.defName}");
                 }
 
                 // Check if our comp is already added
@@ -53,11 +58,11 @@
                 {
                     CompProperties_CustomMealName customNameProps = new CompProperties_CustomMealName();
                     mealDef.comps.Add(customNameProps);
-                    Log.Warning($"[CustomFoodNames] Added CompProperties_CustomMealName to {mealDefName}");
+                    Log.Warning($"[CustomFoodNames] Added CompProperties_CustomMealName to {mealDef.defName}");
                 }
                 else
                 {
-                    Log.Warning($"[CustomFoodNames] CompProperties_CustomMealName already exists on {mealDefName}");
+                    Log.Warning($"[CustomFoodNames] CompProperties_CustomMealName already exists on {mealDef.defName}");
                 }
             }
         }
