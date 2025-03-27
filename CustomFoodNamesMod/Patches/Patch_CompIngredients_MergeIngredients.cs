@@ -53,8 +53,8 @@ namespace CustomFoodNamesMod.Patches
                     return;
                 }
 
-                // Check if this comp belongs to a meal
-                if (!parent.def?.defName.StartsWith("Meal") ?? true)
+                // Skip if not an ingestible
+                if (!parent.def?.IsIngestible ?? true)
                 {
                     return;
                 }
@@ -75,16 +75,36 @@ namespace CustomFoodNamesMod.Patches
                 // Generate a new name based on the updated ingredients
                 if (__instance.ingredients.Count > 0)
                 {
-                    // Use procedural generation for names
-                    string newDishName = ProceduralDishNameGenerator.GenerateDishName(
-                        __instance.ingredients,
-                        parent.def);
+                    // Check if this is a nutrient paste meal
+                    if (parent.def.defName == "MealNutrientPaste" || parent.def.defName.Contains("NutrientPaste"))
+                    {
+                        // Use our simplified nutrient paste name generator
+                        string newDishName = NutrientPasteNameGenerator.GenerateNutrientPasteName(
+                            __instance.ingredients);
 
-                    customNameComp.AssignedDishName = newDishName;
+                        customNameComp.AssignedDishName = newDishName;
+                    }
+                    else
+                    {
+                        // Use procedural generation for regular meals
+                        string newDishName = ProceduralDishNameGenerator.GenerateDishName(
+                            __instance.ingredients,
+                            parent.def);
+
+                        customNameComp.AssignedDishName = newDishName;
+                    }
                 }
                 else
                 {
-                    customNameComp.AssignedDishName = "Mystery Meal";
+                    // Check if this is a nutrient paste meal
+                    if (parent.def.defName == "MealNutrientPaste" || parent.def.defName.Contains("NutrientPaste"))
+                    {
+                        customNameComp.AssignedDishName = "Mystery Nutrient Paste";
+                    }
+                    else
+                    {
+                        customNameComp.AssignedDishName = "Mystery Meal";
+                    }
                 }
             }
             catch (System.Exception ex)

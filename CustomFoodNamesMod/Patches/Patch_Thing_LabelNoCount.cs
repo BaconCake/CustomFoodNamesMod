@@ -10,41 +10,82 @@ namespace CustomFoodNamesMod.Patches
     {
         public static void Postfix(ref string __result, Thing __instance)
         {
-            // Only process meal items
-            if (!__instance.def.defName.StartsWith("Meal"))
+            // Check if it's a food item
+            if (!(__instance.def.IsIngestible))
                 return;
 
-            if (__instance is ThingWithComps twc)
+            // Handle nutrient paste meals
+            if (__instance.def.defName == "MealNutrientPaste" || __instance.def.defName.Contains("NutrientPaste"))
             {
-                // Get the custom name component
-                var customNameComp = twc.GetComp<CompCustomMealName>();
-
-                if (customNameComp == null)
+                if (__instance is ThingWithComps twc)
                 {
+                    // Get the custom name component
+                    var customNameComp = twc.GetComp<CompCustomMealName>();
+
+                    if (customNameComp == null)
+                    {
+                        return;
+                    }
+
+                    // If there's no assigned name yet, generate one
+                    if (string.IsNullOrEmpty(customNameComp.AssignedDishName))
+                    {
+                        // Get ingredients from the meal
+                        var compIngredients = twc.TryGetComp<CompIngredients>();
+
+                        if (compIngredients != null && compIngredients.ingredients.Count > 0)
+                        {
+                            // Use the simplified nutrient paste generator
+                            customNameComp.AssignedDishName = NutrientPasteNameGenerator.GenerateNutrientPasteName(
+                                compIngredients.ingredients);
+                        }
+                        else
+                        {
+                            customNameComp.AssignedDishName = "Mystery Nutrient Paste";
+                        }
+                    }
+
+                    // Replace the entire name with our custom name for nutrient paste
+                    __result = __result + $" ({customNameComp.AssignedDishName})";
                     return;
                 }
+            }
 
-                // If there's no assigned name yet, generate one
-                if (string.IsNullOrEmpty(customNameComp.AssignedDishName))
+            // Only process other meal items (not nutrient paste)
+            else if (__instance.def.defName.StartsWith("Meal"))
+            {
+                if (__instance is ThingWithComps twc)
                 {
-                    // Get ingredients from the meal
-                    var compIngredients = twc.TryGetComp<CompIngredients>();
+                    // Get the custom name component
+                    var customNameComp = twc.GetComp<CompCustomMealName>();
 
-                    if (compIngredients != null && compIngredients.ingredients.Count > 0)
+                    if (customNameComp == null)
                     {
-                        // Use the procedural generator for more complex meals
-                        customNameComp.AssignedDishName = ProceduralDishNameGenerator.GenerateDishName(
-                            compIngredients.ingredients,
-                            __instance.def);
+                        return;
                     }
-                    else
+
+                    // If there's no assigned name yet, generate one
+                    if (string.IsNullOrEmpty(customNameComp.AssignedDishName))
                     {
-                        customNameComp.AssignedDishName = "Mystery Meal";
+                        // Get ingredients from the meal
+                        var compIngredients = twc.TryGetComp<CompIngredients>();
+
+                        if (compIngredients != null && compIngredients.ingredients.Count > 0)
+                        {
+                            // Use the procedural generator for more complex meals
+                            customNameComp.AssignedDishName = ProceduralDishNameGenerator.GenerateDishName(
+                                compIngredients.ingredients,
+                                __instance.def);
+                        }
+                        else
+                        {
+                            customNameComp.AssignedDishName = "Mystery Meal";
+                        }
                     }
+
+                    // Append the stored name for regular meals
+                    __result += $" ({customNameComp.AssignedDishName})";
                 }
-
-                // Always append the stored name
-                __result += $" ({customNameComp.AssignedDishName})";
             }
         }
     }

@@ -19,10 +19,10 @@
             // Create a list to store all found meal defs
             var allMealDefs = new List<ThingDef>();
 
-            // Find all ThingDefs that are meals
+            // Find all ThingDefs that are meals or nutrient paste
             foreach (var def in DefDatabase<ThingDef>.AllDefs)
             {
-                if (def.defName.StartsWith("Meal"))
+                if (def.defName.StartsWith("Meal") || def.defName.Contains("NutrientPaste"))
                 {
                     allMealDefs.Add(def);
                 }

@@ -60,7 +60,10 @@
     <Compile Include="IngredientCategorizer.cs" />
     <Compile Include="IngredientFinder.cs" />
     <Compile Include="MealDescriptionGenerator.cs" />
+    <Compile Include="MealDescriptionUtility.cs" />
     <Compile Include="ModInit.cs" />
+    <Compile Include="NutrientPasteNameGenerator.cs" />
+    <Compile Include="Patches\Patch_ThingDef_DescriptionDetailed.cs" />
     <Compile Include="Patches\Patch_Thing_LabelNoCount.cs" />
     <Compile Include="Patches\Patch_CompIngredients_MergeIngredients.cs" />
     <Compile Include="ProceduralDishNameGenerator.cs" />
