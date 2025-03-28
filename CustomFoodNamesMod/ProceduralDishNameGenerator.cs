@@ -1,19 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Verse;
-using static CustomFoodNamesMod.IngredientCategorizer;
-
-namespace CustomFoodNamesMod
+﻿namespace CustomFoodNamesMod
 {
+    using System.Collections.Generic;
+    using System.Linq;
+    using Verse;
+    using static CustomFoodNamesMod.IngredientCategorizer;
+
     /// <summary>
     /// Generates procedural dish names based on ingredients
     /// </summary>
     public static class ProceduralDishNameGenerator
     {
-        #region Name Templates
-
         // Template formats for meat-based dishes
+
+        /// <summary>
+        /// Defines the MeatDishTemplates
+        /// </summary>
         private static readonly List<string> MeatDishTemplates = new List<string>
         {
             "{0} Stew",
@@ -30,6 +31,10 @@ namespace CustomFoodNamesMod
         };
 
         // Template formats for vegetable-based dishes
+
+        /// <summary>
+        /// Defines the VegetableDishTemplates
+        /// </summary>
         private static readonly List<string> VegetableDishTemplates = new List<string>
         {
             "{0} Medley",
@@ -45,6 +50,10 @@ namespace CustomFoodNamesMod
         };
 
         // Template formats for grain-based dishes
+
+        /// <summary>
+        /// Defines the GrainDishTemplates
+        /// </summary>
         private static readonly List<string> GrainDishTemplates = new List<string>
         {
             "{0} Pilaf",
@@ -57,6 +66,10 @@ namespace CustomFoodNamesMod
         };
 
         // Template formats for mixed dishes
+
+        /// <summary>
+        /// Defines the MixedDishTemplates
+        /// </summary>
         private static readonly List<string> MixedDishTemplates = new List<string>
         {
             "{0} and {1} Plate",
@@ -70,6 +83,10 @@ namespace CustomFoodNamesMod
         };
 
         // Templates for exotic ingredient dishes
+
+        /// <summary>
+        /// Defines the ExoticDishTemplates
+        /// </summary>
         private static readonly List<string> ExoticDishTemplates = new List<string>
         {
             "Exotic {0} Delicacy",
@@ -81,6 +98,10 @@ namespace CustomFoodNamesMod
         };
 
         // Templates for fine meal qualifiers
+
+        /// <summary>
+        /// Defines the FineMealPrefixes
+        /// </summary>
         private static readonly List<string> FineMealPrefixes = new List<string>
         {
             "Delicious",
@@ -94,6 +115,10 @@ namespace CustomFoodNamesMod
         };
 
         // Templates for lavish meal qualifiers
+
+        /// <summary>
+        /// Defines the LavishMealPrefixes
+        /// </summary>
         private static readonly List<string> LavishMealPrefixes = new List<string>
         {
             "Exquisite",
@@ -108,6 +133,10 @@ namespace CustomFoodNamesMod
         };
 
         // Cooking methods for variety
+
+        /// <summary>
+        /// Defines the CookingMethods
+        /// </summary>
         private static readonly List<string> CookingMethods = new List<string>
         {
             "Roasted",
@@ -123,6 +152,10 @@ namespace CustomFoodNamesMod
         };
 
         // Sauce types for meat dishes
+
+        /// <summary>
+        /// Defines the SauceTypes
+        /// </summary>
         private static readonly List<string> SauceTypes = new List<string>
         {
             "Rich",
@@ -137,11 +170,12 @@ namespace CustomFoodNamesMod
             "Umami"
         };
 
-        #endregion
-
         /// <summary>
         /// Generate a dish name based on ingredients and meal quality
         /// </summary>
+        /// <param name="ingredients">The ingredients<see cref="List{ThingDef}"/></param>
+        /// <param name="mealDef">The mealDef<see cref="ThingDef"/></param>
+        /// <returns>The <see cref="string"/></returns>
         public static string GenerateDishName(List<ThingDef> ingredients, ThingDef mealDef)
         {
             // Sanity check
@@ -167,6 +201,8 @@ namespace CustomFoodNamesMod
         /// <summary>
         /// Determine the quality level of a meal
         /// </summary>
+        /// <param name="mealDef">The mealDef<see cref="ThingDef"/></param>
+        /// <returns>The <see cref="MealQuality"/></returns>
         private static MealQuality DetermineMealQuality(ThingDef mealDef)
         {
             if (mealDef == null)
@@ -185,6 +221,9 @@ namespace CustomFoodNamesMod
         /// <summary>
         /// Core method to generate a procedural dish name
         /// </summary>
+        /// <param name="ingredients">The ingredients<see cref="List{ThingDef}"/></param>
+        /// <param name="mealQuality">The mealQuality<see cref="MealQuality"/></param>
+        /// <returns>The <see cref="string"/></returns>
         private static string GenerateProceduralName(List<ThingDef> ingredients, MealQuality mealQuality)
         {
             // Get the primary category and dominant ingredients
@@ -216,6 +255,12 @@ namespace CustomFoodNamesMod
         /// <summary>
         /// Generate a name based on the primary category of ingredients
         /// </summary>
+        /// <param name="category">The category<see cref="IngredientCategory"/></param>
+        /// <param name="ingredientLabels">The ingredientLabels<see cref="List{string}"/></param>
+        /// <param name="quality">The quality<see cref="MealQuality"/></param>
+        /// <param name="isVegetarian">The isVegetarian<see cref="bool"/></param>
+        /// <param name="isCarnivore">The isCarnivore<see cref="bool"/></param>
+        /// <returns>The <see cref="string"/></returns>
         private static string GenerateNameByCategory(
             IngredientCategory category,
             List<string> ingredientLabels,
@@ -234,14 +279,7 @@ namespace CustomFoodNamesMod
                 ? ingredientLabels[1]
                 : GetFillerIngredient(category);
 
-            // Special case: exotic ingredients always use exotic templates
-            if (category == IngredientCategory.Exotic)
-            {
-                string exoticTemplate = ExoticDishTemplates.RandomElement();
-                return string.Format(exoticTemplate, primaryIngredient, secondaryIngredient);
-            }
-
-            // Pick templates based on category
+            // Pick templates based on category - no special case for Exotic anymore
             List<string> templates;
             switch (category)
             {
@@ -260,7 +298,7 @@ namespace CustomFoodNamesMod
                         secondaryIngredient = $"{SauceTypes.RandomElement()} {secondaryIngredient}";
                     }
                     break;
-                    
+
                 case IngredientCategory.Vegetable:
                 case IngredientCategory.Fruit:
                     templates = VegetableDishTemplates;
@@ -283,6 +321,9 @@ namespace CustomFoodNamesMod
         /// <summary>
         /// Get the most significant ingredients from the list
         /// </summary>
+        /// <param name="ingredients">The ingredients<see cref="List{ThingDef}"/></param>
+        /// <param name="count">The count<see cref="int"/></param>
+        /// <returns>The <see cref="List{ThingDef}"/></returns>
         private static List<ThingDef> GetDominantIngredients(List<ThingDef> ingredients, int count)
         {
             var result = new List<ThingDef>();
@@ -336,6 +377,8 @@ namespace CustomFoodNamesMod
         /// <summary>
         /// Get a generic filler ingredient appropriate for the category
         /// </summary>
+        /// <param name="category">The category<see cref="IngredientCategory"/></param>
+        /// <returns>The <see cref="string"/></returns>
         private static string GetFillerIngredient(IngredientCategory category)
         {
             switch (category)
@@ -360,6 +403,8 @@ namespace CustomFoodNamesMod
         /// <summary>
         /// Clean up an ingredient label for better name generation
         /// </summary>
+        /// <param name="label">The label<see cref="string"/></param>
+        /// <returns>The <see cref="string"/></returns>
         private static string CleanIngredientLabel(string label)
         {
             if (string.IsNullOrEmpty(label))
@@ -392,8 +437,19 @@ namespace CustomFoodNamesMod
         /// </summary>
         public enum MealQuality
         {
+            /// <summary>
+            /// Defines the Simple
+            /// </summary>
             Simple,
+
+            /// <summary>
+            /// Defines the Fine
+            /// </summary>
             Fine,
+
+            /// <summary>
+            /// Defines the Lavish
+            /// </summary>
             Lavish
         }
     }

@@ -53,21 +53,25 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BatchMealNameHandler.cs" />
     <Compile Include="CompCustomMealName.cs" />
     <Compile Include="CompProperties_CustomMealName.cs" />
     <Compile Include="DefInjector.cs" />
     <Compile Include="DishNameDatabase.cs" />
     <Compile Include="IngredientCategorizer.cs" />
+    <Compile Include="IngredientCategoryResolver.cs" />
     <Compile Include="IngredientFinder.cs" />
     <Compile Include="MealDescriptionGenerator.cs" />
     <Compile Include="MealDescriptionUtility.cs" />
     <Compile Include="ModInit.cs" />
     <Compile Include="NutrientPasteNameGenerator.cs" />
-    <Compile Include="Patches\Patch_ThingDef_DescriptionDetailed.cs" />
+    <Compile Include="Patches\ImprovedBatchMealHandler.cs" />
+    <Compile Include="Patches\Patch_Thing_DescriptionFlavor.cs" />
     <Compile Include="Patches\Patch_Thing_LabelNoCount.cs" />
     <Compile Include="Patches\Patch_CompIngredients_MergeIngredients.cs" />
     <Compile Include="ProceduralDishNameGenerator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TemplateDishGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

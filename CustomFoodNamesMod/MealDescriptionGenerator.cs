@@ -122,7 +122,6 @@ namespace CustomFoodNamesMod
                 .Concat(GetIngredientsOfCategory(ingredients, IngredientCategory.Fruit))
                 .ToList();
             var grainIngredients = GetIngredientsOfCategory(ingredients, IngredientCategory.Grain);
-            var exoticIngredients = GetIngredientsOfCategory(ingredients, IngredientCategory.Exotic);
 
             // Build the description
             StringBuilder description = new StringBuilder();
@@ -139,14 +138,6 @@ namespace CustomFoodNamesMod
             {
                 description.Append(" ");
                 description.AppendFormat("It was {0} with care.", CookingMethods.RandomElement());
-            }
-
-            // Add special mention for exotic ingredients
-            if (exoticIngredients.Count > 0 && Rand.Value < 0.75f)
-            {
-                description.Append(" ");
-                string exoticTemplate = ExoticMentions.RandomElement();
-                description.AppendFormat(exoticTemplate, CleanIngredientLabel(exoticIngredients[0].label));
             }
 
             // Add nutritional comment
@@ -292,8 +283,6 @@ namespace CustomFoodNamesMod
                     return "fruits";
                 case IngredientCategory.Fungus:
                     return "fungi";
-                case IngredientCategory.Exotic:
-                    return "exotic ingredients";
                 case IngredientCategory.Special:
                     return "special ingredients";
                 default:

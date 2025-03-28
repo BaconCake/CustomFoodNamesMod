@@ -22,7 +22,8 @@
             // Find all ThingDefs that are meals or nutrient paste
             foreach (var def in DefDatabase<ThingDef>.AllDefs)
             {
-                if (def.defName.StartsWith("Meal") || def.defName.Contains("NutrientPaste"))
+                if ((def.defName.StartsWith("Meal") || def.defName.Contains("NutrientPaste")) &&
+                    !def.defName.Contains("Survival") && !def.defName.Contains("PackagedSurvival"))
                 {
                     allMealDefs.Add(def);
                 }

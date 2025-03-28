@@ -1,70 +1,37 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <IngredientDishNames>
-	<!-- Single ingredients -->
-	<!-- Simple meal names (no quality attribute means "Simple") -->
-	<Ingredient defName="RawPotatoes">
-		<DishName>Lump O' Taters</DishName>
-		<DishName>Bland Spud Mush</DishName>
-		<DishName>Basic Potato Stodge</DishName>
+	<!-- #region Single Ingredients -->
+	
+	<!-- Single ingredient: Human Meat (euphemistically named) -->
+	<Ingredient defName="Meat_Human" mealQuality="Simple">
+		<Dish>
+			<Name>Mystery Protein Skewer</Name>
+			<Description>Grilled over an open flame with minimal seasoning, this skewer delivers a savory, smoky flavor that fills the belly, if not the conscience.</Description>
+		</Dish>
 	</Ingredient>
 
-	<!-- Fine meal names -->
-	<Ingredient defName="RawPotatoes" mealQuality="Fine">
-		<DishName>Herbed Potato Medley</DishName>
-		<DishName>Seasoned Spud Delight</DishName>
-		<DishName>Garlic Butter Potatoes</DishName>
+	<Ingredient defName="Meat_Human" mealQuality="Fine">
+		<Dish>
+			<Name>Charred Long Pork Filet</Name>
+			<Description>Seared to perfection and lightly seasoned, this filet offers tender bites and a rich, meaty finish that some colonists find disturbingly delightful.</Description>
+		</Dish>
 	</Ingredient>
 
-	<!-- Lavish meal names -->
-	<Ingredient defName="RawPotatoes" mealQuality="Lavish">
-		<DishName>Duchess Potato Rosettes</DishName>
-		<DishName>Truffled Potato Gratin</DishName>
-		<DishName>Golden Potato Croquettes</DishName>
+	<Ingredient defName="Meat_Human" mealQuality="Lavish">
+		<Dish>
+			<Name>Crimson Glazed Long Pork</Name>
+			<Description>Slow-braised in berry reduction and finished with a wine glaze, this gourmet delicacy melts on the tongue, leaving a hauntingly sweet aftertaste.</Description>
+		</Dish>
 	</Ingredient>
 
-	<!-- Simple rice dishes -->
-	<Ingredient defName="RawRice">
-		<DishName>Plain Rice Bowl</DishName>
-		<DishName>Basic Rice Porridge</DishName>
-		<DishName>Bland Rice Pile</DishName>
-	</Ingredient>
-
-	<!-- Fine rice dishes -->
-	<Ingredient defName="RawRice" mealQuality="Fine">
-		<DishName>Seasoned Rice Pilaf</DishName>
-		<DishName>Flavorful Rice Medley</DishName>
-		<DishName>Aromatic Steamed Rice</DishName>
-	</Ingredient>
-
-	<!-- Lavish rice dishes -->
-	<Ingredient defName="RawRice" mealQuality="Lavish">
-		<DishName>Saffron-Infused Risotto</DishName>
-		<DishName>Golden Rice Paella</DishName>
-		<DishName>Truffle and Wild Mushroom Risotto</DishName>
-	</Ingredient>
-
+	<!-- #endregion Single Ingredients -->
 	<!-- Two ingredient combinations -->
 	<IngredientCombo>
 		<Ingredient1>RawPotatoes</Ingredient1>
 		<Ingredient2>RawFungus</Ingredient2>
-		<DishName>Potato and Mushroom Casserole</DishName>
-		<DishName>Earthy Tuber Stew</DishName>
-		<DishName>Fungal Potato Hash</DishName>
-	</IngredientCombo>
-
-	<IngredientCombo>
-		<Ingredient1>RawPotatoes</Ingredient1>
-		<Ingredient2>RawRice</Ingredient2>
-		<DishName>Starchy Duo Bowl</DishName>
-		<DishName>Potato Rice Pilaf</DishName>
-		<DishName>Tuber and Grain Medley</DishName>
-	</IngredientCombo>
-
-	<IngredientCombo>
-		<Ingredient1>RawFungus</Ingredient1>
-		<Ingredient2>RawRice</Ingredient2>
-		<DishName>Mushroom Risotto</DishName>
-		<DishName>Fungal Rice Bowl</DishName>
-		<DishName>Forest and Field Stew</DishName>
+		<Dish>
+			<Name>Potato and Mushroom Casserole</Name>
+			<Description>Sliced potatoes layered with mushrooms and baked until golden. The earthy flavors of both ingredients complement each other wonderfully.</Description>
+		</Dish>
 	</IngredientCombo>
 </IngredientDishNames>

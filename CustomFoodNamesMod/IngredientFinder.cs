@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using RimWorld;
 using Verse;
+using static CustomFoodNamesMod.IngredientCategoryResolver;
 
 namespace CustomFoodNamesMod
 {
@@ -16,11 +17,43 @@ namespace CustomFoodNamesMod
             if (Prefs.DevMode)
             {
                 Log.Message("[CustomFoodNames] Running ingredient finder...");
-                FindAllPotentialIngredients();
+                FindUncategorizedIngredients();
             }
         }
 
-        public static void FindAllPotentialIngredients()
+        /// <summary>
+        /// Determines if a ThingDef is animal feed and not meant for human consumption
+        /// </summary>
+        private static bool IsAnimalFeedOnly(ThingDef def)
+        {
+            // Check the name for common animal feed terms
+            string defName = def.defName.ToLowerInvariant();
+            string label = def.label.ToLowerInvariant();
+
+            // Check special cases by name
+            if (defName == "hay" || label == "hay")
+                return true;
+
+            // Check if it's only for animals based on food type
+            if (def.ingestible != null)
+            {
+                // If it's not for humans but is for herbivores or carnivores, it's likely animal feed
+                if (!def.ingestible.foodType.HasFlag(FoodTypeFlags.Meal) &&
+                    (def.ingestible.foodType.HasFlag(FoodTypeFlags.Plant) ||
+                     def.ingestible.foodType.HasFlag(FoodTypeFlags.Tree) ||
+                     def.ingestible.foodType.HasFlag(FoodTypeFlags.Corpse)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Find all ingredients that don't have a category assigned yet
+        /// </summary>
+        public static void FindUncategorizedIngredients()
         {
             try
             {
@@ -31,55 +64,54 @@ namespace CustomFoodNamesMod
 
                 Log.Message($"[CustomFoodNames] Found {allPotentialIngredients.Count} potential ingredients");
 
-                // Create lists to track ingredients
-                var ingredientsWithDishNames = new HashSet<string>(
-                    DishNameDatabase.IngredientToDishNames.Keys);
+                // Track uncategorized ingredients
+                var uncategorizedIngredients = new List<ThingDef>();
 
-                var ingredientsWithoutDishNames = new List<ThingDef>();
-
-                // Log info about each ingredient
+                // Check which ingredients don't have explicit category mappings
                 foreach (var ingredient in allPotentialIngredients)
                 {
-                    if (ingredientsWithDishNames.Contains(ingredient.defName))
+                    // Get the category using our resolver
+                    var category = GetIngredientCategory(ingredient);
+
+                    // If it's "Other" or the category was inferred (not explicitly mapped),
+                    // add it to our uncategorized list, but exclude animal feed
+                    if (category == IngredientCategory.Other && !IsAnimalFeedOnly(ingredient))
                     {
-                        Log.Message($"[CustomFoodNames] Already have dish name for: {ingredient.defName} - Label: {ingredient.label}");
-                    }
-                    else
-                    {
-                        Log.Message($"[CustomFoodNames] Missing dish name for: {ingredient.defName} - Label: {ingredient.label}");
-                        ingredientsWithoutDishNames.Add(ingredient);
+                        Log.Message($"[CustomFoodNames] Uncategorized ingredient: {ingredient.defName} - Label: {ingredient.label}");
+                        uncategorizedIngredients.Add(ingredient);
                     }
                 }
 
-                // Save missing ingredients to a file
+                // Save uncategorized ingredients to a file
                 string modDir = GetModDirectory();
                 if (!string.IsNullOrEmpty(modDir))
                 {
-                    string missingIngredientsPath = Path.Combine(modDir, "MissingIngredients.xml");
+                    string uncategorizedPath = Path.Combine(modDir, "UncategorizedIngredients.xml");
 
-                    // Create XML template
+                    // Create XML template focused only on ingredient list
                     string xmlContent = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                                     "<IngredientDishNames>\n";
+                                     "<IngredientCategories>\n" +
+                                     "    <!-- These ingredients need to be categorized -->\n" +
+                                     "    <!-- Available categories: Protein, Carb, Vegetable, Dairy, Fat, Sweetener, Flavoring, Exotic, Other -->\n\n";
 
-                    foreach (var ingredient in ingredientsWithoutDishNames)
+                    foreach (var ingredient in uncategorizedIngredients)
                     {
-                        xmlContent += $"    <Ingredient defName=\"{ingredient.defName}\">\n" +
+                        xmlContent += $"    <IngredientMapping>\n" +
+                                      $"        <DefName>{ingredient.defName}</DefName>\n" +
                                       $"        <!-- {ingredient.label} -->\n" +
-                                      $"        <DishName>{CleanIngredientName(ingredient.label)} Dish</DishName>\n" +
-                                      $"        <DishName>Simple {CleanIngredientName(ingredient.label)} Meal</DishName>\n" +
-                                      $"        <DishName>{CleanIngredientName(ingredient.label)} Preparation</DishName>\n" +
-                                      $"    </Ingredient>\n";
+                                      $"        <Category>Other</Category> <!-- Update with correct category -->\n" +
+                                      $"    </IngredientMapping>\n\n";
                     }
 
-                    xmlContent += "</IngredientDishNames>";
+                    xmlContent += "</IngredientCategories>";
 
-                    File.WriteAllText(missingIngredientsPath, xmlContent);
-                    Log.Message($"[CustomFoodNames] Written missing ingredients template to: {missingIngredientsPath}");
+                    File.WriteAllText(uncategorizedPath, xmlContent);
+                    Log.Message($"[CustomFoodNames] Written uncategorized ingredients to: {uncategorizedPath}");
                 }
             }
             catch (Exception ex)
             {
-                Log.Error($"[CustomFoodNames] Error in FindAllPotentialIngredients: {ex}");
+                Log.Error($"[CustomFoodNames] Error in FindUncategorizedIngredients: {ex}");
             }
         }
 
@@ -129,26 +161,8 @@ namespace CustomFoodNamesMod
         }
 
         /// <summary>
-        /// Cleans up the ingredient name for better dish name generation
+        /// Helper method to get the mod directory
         /// </summary>
-        private static string CleanIngredientName(string label)
-        {
-            // Remove "raw" prefix if present (case insensitive)
-            string cleanLabel = System.Text.RegularExpressions.Regex.Replace(
-                label,
-                @"^raw\s+",
-                "",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-            // Capitalize first letter if needed
-            if (!string.IsNullOrEmpty(cleanLabel) && char.IsLower(cleanLabel[0]))
-            {
-                cleanLabel = char.ToUpper(cleanLabel[0]) + cleanLabel.Substring(1);
-            }
-
-            return cleanLabel;
-        }
-
         private static string GetModDirectory()
         {
             try

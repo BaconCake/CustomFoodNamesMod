@@ -59,6 +59,10 @@ namespace CustomFoodNamesMod.Patches
                     return;
                 }
 
+                // Skip survival meals
+                if (parent.def.defName.Contains("Survival") || parent.def.defName.Contains("PackagedSurvival"))
+                    return;
+
                 // Check ingredients collection
                 if (__instance.ingredients == null)
                 {
@@ -69,6 +73,13 @@ namespace CustomFoodNamesMod.Patches
                 var customNameComp = parent.GetComp<CompCustomMealName>();
                 if (customNameComp == null)
                 {
+                    return;
+                }
+
+                // Check if this meal already has a name (from a batch job)
+                if (!string.IsNullOrEmpty(customNameComp.AssignedDishName))
+                {
+                    // Already has a name assigned, don't override it
                     return;
                 }
 
@@ -86,7 +97,22 @@ namespace CustomFoodNamesMod.Patches
                     }
                     else
                     {
-                        // Use procedural generation for regular meals
+                        // Check if this meal is part of a batch job
+                        Pawn worker = GetCookingPawn(parent);
+                        if (worker != null && worker.CurJob != null)
+                        {
+                            int jobId = worker.CurJob.loadID;
+                            string batchName = BatchMealNameHandler.GetBatchMealName(jobId);
+
+                            if (!string.IsNullOrEmpty(batchName))
+                            {
+                                // Use the batch name
+                                customNameComp.AssignedDishName = batchName;
+                                return;
+                            }
+                        }
+
+                        // No batch name available, use procedural generation
                         string newDishName = ProceduralDishNameGenerator.GenerateDishName(
                             __instance.ingredients,
                             parent.def);
@@ -111,6 +137,39 @@ namespace CustomFoodNamesMod.Patches
             {
                 Log.Error($"[CustomFoodNames] Error in MergeIngredients patch: {ex}");
             }
+        }
+
+        // Helper method to try to find the pawn that's cooking this meal
+        private static Pawn GetCookingPawn(Thing meal)
+        {
+            try
+            {
+                // This is a simplistic approach - in a real implementation, we might need 
+                // more sophisticated logic to find the cooking pawn
+                var position = meal.Position;
+                var map = meal.Map;
+
+                if (map != null)
+                {
+                    // Look for a pawn doing a cooking job at this position
+                    var pawns = map.mapPawns.AllPawns;
+                    foreach (var pawn in pawns)
+                    {
+                        if (pawn.CurJob != null &&
+                            pawn.CurJob.targetA.Thing != null &&
+                            pawn.CurJob.targetA.Thing.def.defName.Contains("Stove"))
+                        {
+                            return pawn;
+                        }
+                    }
+                }
+            }
+            catch (System.Exception)
+            {
+                // Ignore errors in this helper method
+            }
+
+            return null;
         }
     }
 }

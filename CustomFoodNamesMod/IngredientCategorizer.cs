@@ -21,7 +21,6 @@ namespace CustomFoodNamesMod
             Dairy,      // Milk and milk products
             Fruit,      // Berries and fruits
             Fungus,     // Mushrooms and fungi
-            Exotic,     // Rare/unusual ingredients like insect jelly, thrumbo meat
             Special,    // Ingredients with special naming importance
             Other       // Default category for uncategorized items
         }
@@ -37,10 +36,7 @@ namespace CustomFoodNamesMod
             "RawRice",
             "Milk",
             "InsectJelly",
-            "Chocolate",
-            "Meat_Thrumbo",
-            "Meat_Human"
-            // Add more as needed
+            "Chocolate"
         };
 
         // Initialize the categorizer
@@ -82,15 +78,9 @@ namespace CustomFoodNamesMod
             if (specialCaseIngredients.Contains(defName))
                 return IngredientCategory.Special;
 
-            // Check for meat
+            // Check for meat - treat all meat the same including human and thrumbo
             if (defName.StartsWith("Meat_"))
             {
-                // Check for exotic meats
-                if (defName == "Meat_Thrumbo" || defName == "Meat_Human" ||
-                    defName == "Meat_Megaspider" || defName.Contains("Boomalope") ||
-                    defName.Contains("Boomrat"))
-                    return IngredientCategory.Exotic;
-
                 return IngredientCategory.Meat;
             }
 
@@ -115,10 +105,6 @@ namespace CustomFoodNamesMod
             if (defName == "RawFungus" || defName.Contains("Mushroom") ||
                 defName.Contains("Fungus") || defName == "Glowstool")
                 return IngredientCategory.Fungus;
-
-            // Exotic food
-            if (defName == "InsectJelly" || defName == "Agarilux")
-                return IngredientCategory.Exotic;
 
             // Default assumption for Raw* is vegetable
             if (defName.StartsWith("Raw"))
@@ -150,21 +136,10 @@ namespace CustomFoodNamesMod
 
             var dominantCategory = categoryGroups.First().Key;
 
-            // Pick a random ingredient from the dominant category, 
-            // with preference to exotic/special ones
+            // Pick a random ingredient from the dominant category
             var dominantIngredients = ingredients
                 .Where(i => GetIngredientCategory(i) == dominantCategory)
                 .ToList();
-
-            // First look for exotic ingredients in the dominant category
-            var exotics = dominantIngredients
-                .Where(i => i.defName.Contains("Thrumbo") ||
-                            i.defName.Contains("Insect") ||
-                            i.defName.Contains("Human"))
-                .ToList();
-
-            if (exotics.Any())
-                return exotics.RandomElement();
 
             // Otherwise just pick any from the dominant category
             return dominantIngredients.RandomElement();
@@ -235,12 +210,12 @@ namespace CustomFoodNamesMod
         /// </summary>
         private static void PreCategorizeCommonIngredients()
         {
-            // Meats
+            // Meats - now all treated the same
             ingredientCategoryCache["Meat_Cow"] = IngredientCategory.Meat;
             ingredientCategoryCache["Meat_Chicken"] = IngredientCategory.Meat;
             ingredientCategoryCache["Meat_Pig"] = IngredientCategory.Meat;
-            ingredientCategoryCache["Meat_Human"] = IngredientCategory.Exotic;
-            ingredientCategoryCache["Meat_Thrumbo"] = IngredientCategory.Exotic;
+            ingredientCategoryCache["Meat_Human"] = IngredientCategory.Meat; // Now regular meat
+            ingredientCategoryCache["Meat_Thrumbo"] = IngredientCategory.Meat; // Now regular meat
 
             // Vegetables
             ingredientCategoryCache["RawPotatoes"] = IngredientCategory.Special;
@@ -261,9 +236,6 @@ namespace CustomFoodNamesMod
             // Eggs
             ingredientCategoryCache["EggChickenUnfertilized"] = IngredientCategory.Egg;
             ingredientCategoryCache["EggChickenFertilized"] = IngredientCategory.Egg;
-
-            // Exotics
-            ingredientCategoryCache["InsectJelly"] = IngredientCategory.Exotic;
         }
     }
 }

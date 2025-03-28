@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Verse;
-using static CustomFoodNamesMod.IngredientCategorizer;
+using static CustomFoodNamesMod.IngredientCategoryResolver;
 
 namespace CustomFoodNamesMod
 {
@@ -34,6 +34,48 @@ namespace CustomFoodNamesMod
             "Mulch"
         };
 
+        // Category-specific descriptors for nutrient paste
+        private static readonly Dictionary<IngredientCategory, List<string>> CategoryDescriptors =
+            new Dictionary<IngredientCategory, List<string>>
+            {
+                {
+                    IngredientCategory.Protein,
+                    new List<string> { "Protein", "Meat", "Flesh" }
+                },
+                {
+                    IngredientCategory.Carb,
+                    new List<string> { "Starch", "Carb", "Grain" }
+                },
+                {
+                    IngredientCategory.Vegetable,
+                    new List<string> { "Vegetable", "Plant", "Greens" }
+                },
+                {
+                    IngredientCategory.Dairy,
+                    new List<string> { "Dairy", "Milk", "Cream" }
+                },
+                {
+                    IngredientCategory.Fat,
+                    new List<string> { "Fat", "Grease", "Oil" }
+                },
+                {
+                    IngredientCategory.Sweetener,
+                    new List<string> { "Sweet", "Sugar", "Syrup" }
+                },
+                {
+                    IngredientCategory.Flavoring,
+                    new List<string> { "Spice", "Herb", "Flavor" }
+                },
+                {
+                    IngredientCategory.Exotic,
+                    new List<string> { "Mystery", "Exotic", "Strange" }
+                },
+                {
+                    IngredientCategory.Other,
+                    new List<string> { "Unidentified", "Unknown", "Mysterious" }
+                }
+            };
+
         #endregion
 
         /// <summary>
@@ -45,11 +87,25 @@ namespace CustomFoodNamesMod
             if (ingredients == null || ingredients.Count == 0)
                 return "Mystery Nutrient Paste";
 
-            // Get most frequent ingredient type
-            var dominantIngredient = GetDominantIngredient(ingredients);
+            // Get most frequent ingredient category
+            IngredientCategory dominantCategory = GetDominantCategory(ingredients);
+
+            // Get a representative ingredient from the dominant category
+            ThingDef dominantIngredient = GetRepresentativeIngredient(ingredients, dominantCategory);
 
             // Get the processed ingredient name
-            string ingredientName = CleanIngredientLabel(dominantIngredient.label);
+            string ingredientName;
+
+            if (dominantIngredient != null)
+            {
+                // Use the actual ingredient name
+                ingredientName = CleanIngredientLabel(dominantIngredient.label);
+            }
+            else
+            {
+                // Use a generic category name
+                ingredientName = CategoryDescriptors[dominantCategory].RandomElement();
+            }
 
             // Choose a random paste term
             string pasteTerm = PasteTerms.RandomElement();
@@ -61,19 +117,21 @@ namespace CustomFoodNamesMod
         }
 
         /// <summary>
-        /// Get the most dominant ingredient (the one that appears most frequently)
+        /// Get a representative ingredient from a specific category
         /// </summary>
-        private static ThingDef GetDominantIngredient(List<ThingDef> ingredients)
+        private static ThingDef GetRepresentativeIngredient(List<ThingDef> ingredients, IngredientCategory category)
         {
-            // Group by defName and count occurrences
-            var groupedIngredients = ingredients
-                .GroupBy(i => i.defName)
-                .Select(g => new { DefName = g.Key, Count = g.Count(), Ingredient = g.First() })
-                .OrderByDescending(g => g.Count)
-                .ToList();
+            // Get all ingredients of this category
+            var categoryIngredients = GetIngredientsOfCategory(ingredients, category);
 
-            // Return the most frequent ingredient
-            return groupedIngredients.First().Ingredient;
+            if (categoryIngredients.Count == 0)
+                return null;
+
+            // Find the most common ingredient in this category
+            return categoryIngredients.GroupBy(i => i.defName)
+                .OrderByDescending(g => g.Count())
+                .First()
+                .First();
         }
 
         /// <summary>
