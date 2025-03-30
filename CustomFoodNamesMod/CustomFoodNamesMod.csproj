@@ -53,32 +53,36 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BatchMealNameHandler.cs" />
+    <Compile Include="Batch\BatchJobInfo.cs" />
+    <Compile Include="Batch\BatchMealHandler.cs" />
     <Compile Include="CompCustomMealName.cs" />
     <Compile Include="CompProperties_CustomMealName.cs" />
+    <Compile Include="Core\IngredientCategory.cs" />
+    <Compile Include="Database\DatabaseLoader.cs" />
+    <Compile Include="Database\DishEntry.cs" />
+    <Compile Include="Database\DishInfo.cs" />
     <Compile Include="DefInjector.cs" />
     <Compile Include="DishNameDatabase.cs" />
-    <Compile Include="IngredientCategorizer.cs" />
-    <Compile Include="IngredientCategoryResolver.cs" />
-    <Compile Include="IngredientFinder.cs" />
-    <Compile Include="MealDescriptionGenerator.cs" />
-    <Compile Include="MealDescriptionUtility.cs" />
+    <Compile Include="Core\IngredientCategorizer.cs" />
+    <Compile Include="Generators\GeneratorSelector.cs" />
+    <Compile Include="Generators\NameGeneratorBase.cs" />
+    <Compile Include="Utils\IngredientFinder.cs" />
     <Compile Include="ModInit.cs" />
-    <Compile Include="NutrientPasteNameGenerator.cs" />
-    <Compile Include="Patches\ImprovedBatchMealHandler.cs" />
+    <Compile Include="Generators\NutrientPasteNameGenerator.cs" />
+    <Compile Include="Patches\Patch_JobDriver_DoBill_MakeNewToils.cs" />
     <Compile Include="Patches\Patch_Thing_DescriptionFlavor.cs" />
     <Compile Include="Patches\Patch_Thing_LabelNoCount.cs" />
     <Compile Include="Patches\Patch_CompIngredients_MergeIngredients.cs" />
-    <Compile Include="ProceduralDishNameGenerator.cs" />
+    <Compile Include="Generators\ProceduralDishNameGenerator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TemplateDishGenerator.cs" />
+    <Compile Include="Generators\TemplateDishGenerator.cs" />
+    <Compile Include="Utils\IngredientUtils.cs" />
+    <Compile Include="Utils\StringUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Utilities\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Content Include="Database\DishNames.xml" />
   </ItemGroup>

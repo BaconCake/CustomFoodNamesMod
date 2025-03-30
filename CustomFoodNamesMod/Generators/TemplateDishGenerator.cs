@@ -1,92 +1,42 @@
-﻿namespace CustomFoodNamesMod
-{
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Text.RegularExpressions;
-    using System.Xml.Linq;
-    using Verse;
-    using static CustomFoodNamesMod.IngredientCategoryResolver;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Xml.Linq;
+using Verse;
+using CustomFoodNamesMod.Core;
+using CustomFoodNamesMod.Utils;
 
+namespace CustomFoodNamesMod.Generators
+{
     /// <summary>
     /// Generates meal names using templates based on ingredient categories
     /// </summary>
-    public static class TemplateDishGenerator
+    public class TemplateDishGenerator : NameGeneratorBase
     {
-        // Meal quality levels
-
-        /// <summary>
-        /// Defines the MealQuality
-        /// </summary>
-        public enum MealQuality
-        {
-            /// <summary>
-            /// Defines the Simple
-            /// </summary>
-            Simple,
-
-            /// <summary>
-            /// Defines the Fine
-            /// </summary>
-            Fine,
-
-            /// <summary>
-            /// Defines the Lavish
-            /// </summary>
-            Lavish
-        }
-
         // Types of templates for different meal compositions
-
-        /// <summary>
-        /// Defines the TemplateType
-        /// </summary>
         private enum TemplateType
         {
-            /// <summary>
-            /// Defines the SingleCategory
-            /// </summary>
             SingleCategory,    // Only one ingredient category (e.g. all vegetables)
-
-            /// <summary>
-            /// Defines the DualCategory
-            /// </summary>
             DualCategory,      // Two ingredient categories (e.g. protein + carb)
-
-            /// <summary>
-            /// Defines the MultiCategory
-            /// </summary>
             MultiCategory,     // Three or more categories
-
-            /// <summary>
-            /// Defines the Generic
-            /// </summary>
-            Generic
-        }// Fallback generic templates
+            Generic            // Fallback generic templates
+        }
 
         // Template storage indexed by meal quality, then template type
-
-        /// <summary>
-        /// Defines the Templates
-        /// </summary>
         private static readonly Dictionary<MealQuality, Dictionary<TemplateType, List<string>>> Templates =
             new Dictionary<MealQuality, Dictionary<TemplateType, List<string>>>();
 
         // Adjectives that can be inserted into templates
-
-        /// <summary>
-        /// Defines the CategoryAdjectives
-        /// </summary>
         private static readonly Dictionary<IngredientCategory, List<string>> CategoryAdjectives =
             new Dictionary<IngredientCategory, List<string>>
             {
                 {
-                    IngredientCategory.Protein,
+                    IngredientCategory.Meat,
                     new List<string> { "tender", "juicy", "roasted", "grilled", "seared", "braised", "slow-cooked", "smoked" }
                 },
                 {
-                    IngredientCategory.Carb,
+                    IngredientCategory.Grain,
                     new List<string> { "fluffy", "hearty", "steamed", "seasoned", "toasted", "filling", "starchy" }
                 },
                 {
@@ -98,16 +48,20 @@
                     new List<string> { "creamy", "rich", "buttery", "whipped", "smooth", "velvety", "milky" }
                 },
                 {
-                    IngredientCategory.Fat,
-                    new List<string> { "rich", "savory", "unctuous", "decadent", "luxurious", "silky" }
+                    IngredientCategory.Egg,
+                    new List<string> { "fluffy", "light", "airy", "golden", "delicate", "rich", "savory" }
                 },
                 {
-                    IngredientCategory.Sweetener,
-                    new List<string> { "sweet", "sugary", "honeyed", "caramelized", "glazed", "syrupy" }
+                    IngredientCategory.Fruit,
+                    new List<string> { "sweet", "tangy", "ripe", "juicy", "fresh", "zesty", "vibrant" }
                 },
                 {
-                    IngredientCategory.Flavoring,
-                    new List<string> { "aromatic", "fragrant", "spiced", "herbed", "seasoned", "zesty", "savory" }
+                    IngredientCategory.Fungus,
+                    new List<string> { "earthy", "aromatic", "hearty", "wild", "rustic", "umami", "rich" }
+                },
+                {
+                    IngredientCategory.Special,
+                    new List<string> { "special", "exotic", "unique", "choice", "premium", "rare", "selected" }
                 },
                 {
                     IngredientCategory.Other,
@@ -116,14 +70,68 @@
             };
 
         // Load all templates during static initialization
-
-        /// <summary>
-        /// Initializes static members of the <see cref="TemplateDishGenerator"/> class.
-        /// </summary>
         static TemplateDishGenerator()
         {
             InitializeDefaultTemplates();
             LoadCustomTemplates();
+        }
+
+        /// <summary>
+        /// Generate a dish name based on ingredients and meal definition
+        /// </summary>
+        public override string GenerateName(List<ThingDef> ingredients, ThingDef mealDef)
+        {
+            // Sanity check
+            if (ingredients == null || ingredients.Count == 0)
+                return "Mystery Dish";
+
+            // Determine meal quality from the def name
+            MealQuality quality = DetermineMealQuality(mealDef);
+
+            // First try the database for specific combinations
+            string databaseName = DishNameDatabase.GetDishNameForIngredients(ingredients, quality.ToString());
+            if (!string.IsNullOrEmpty(databaseName))
+                return databaseName;
+
+            // Get all ingredient categories present in the meal
+            var categories = IngredientCategorizer.GetAllCategories(ingredients);
+
+            // Determine template type based on category diversity
+            TemplateType templateType = DetermineTemplateType(categories);
+
+            // Select a template
+            string template = SelectTemplate(quality, templateType);
+
+            // Fill the template with ingredient names
+            return FillTemplate(template, ingredients, categories);
+        }
+
+        /// <summary>
+        /// Generate a description for the meal
+        /// </summary>
+        public override string GenerateDescription(List<ThingDef> ingredients, ThingDef mealDef)
+        {
+            if (ingredients == null || ingredients.Count == 0)
+                return "A mysterious meal with unknown ingredients.";
+
+            // Determine meal quality
+            MealQuality mealQuality = DetermineMealQuality(mealDef);
+
+            // Get ingredient list for description
+            string ingredientList = IngredientUtils.FormatIngredientsList(ingredients);
+
+            // Build appropriate description based on meal quality
+            switch (mealQuality)
+            {
+                case MealQuality.Lavish:
+                    return $"A lavishly prepared dish containing {ingredientList}. It has been expertly crafted to be both nutritious and delicious.";
+
+                case MealQuality.Fine:
+                    return $"A well-prepared dish containing {ingredientList}. It has been skillfully made to balance nutrition and taste.";
+
+                default: // Simple
+                    return $"A basic dish containing {ingredientList}. It offers good nutrition although the taste is simple.";
+            }
         }
 
         /// <summary>
@@ -149,9 +157,9 @@
                 "[protein] stew",
                 "basic [protein] dish",
                 "simple [protein] meal",
-                "[carb] bowl",
-                "plain [carb] dish",
-                "simple [carb] meal",
+                "[grain] bowl",
+                "plain [grain] dish",
+                "simple [grain] meal",
                 "[vegetable] medley",
                 "simple [vegetable] plate",
                 "mixed [vegetable] dish"
@@ -160,12 +168,12 @@
             // Dual category templates
             Templates[MealQuality.Simple][TemplateType.DualCategory] = new List<string>
             {
-                "[protein] with [carb]",
+                "[protein] with [grain]",
                 "[protein] and [vegetable] plate",
-                "[carb] with [vegetable]",
+                "[grain] with [vegetable]",
                 "[vegetable] and [protein] dish",
-                "simple [protein] [carb] meal",
-                "basic [carb] and [vegetable] dish"
+                "simple [protein] [grain] meal",
+                "basic [grain] and [vegetable] dish"
             };
 
             // Multi-category templates
@@ -174,7 +182,7 @@
                 "mixed meal with [protein]",
                 "simple stew with [vegetable]",
                 "basic [protein] dish with sides",
-                "plain meal with [carb]",
+                "plain meal with [grain]",
                 "hodgepodge with [protein]"
             };
 
@@ -196,8 +204,8 @@
             {
                 "sautéed [protein]",
                 "seasoned [protein] plate",
-                "[carb] pilaf",
-                "aromatic [carb] dish",
+                "[grain] pilaf",
+                "aromatic [grain] dish",
                 "garden [vegetable] medley",
                 "herbed [vegetable] plate"
             };
@@ -205,21 +213,21 @@
             // Dual category templates
             Templates[MealQuality.Fine][TemplateType.DualCategory] = new List<string>
             {
-                "[protein] with [carb] side",
+                "[protein] with [grain] side",
                 "seared [protein] with [vegetable]",
-                "[carb] pilaf with [protein]",
+                "[grain] pilaf with [protein]",
                 "[vegetable] medley with [protein]",
-                "[carb] and [vegetable] plate"
+                "[grain] and [vegetable] plate"
             };
 
             // Multi-category templates
             Templates[MealQuality.Fine][TemplateType.MultiCategory] = new List<string>
             {
                 "[protein] dinner with accompaniments",
-                "chef's [carb] with mixed sides",
+                "chef's [grain] with mixed sides",
                 "savory [protein] plate with variety",
                 "colonial [protein] feast",
-                "[carb] mixed plate"
+                "[grain] mixed plate"
             };
 
             // Generic templates
@@ -239,8 +247,8 @@
             {
                 "gourmet [protein] entrée",
                 "chef's [protein] special",
-                "luxury [carb] feast",
-                "deluxe [carb] creation",
+                "luxury [grain] feast",
+                "deluxe [grain] creation",
                 "premium [vegetable] platter",
                 "gourmet [vegetable] arrangement"
             };
@@ -248,11 +256,11 @@
             // Dual category templates
             Templates[MealQuality.Lavish][TemplateType.DualCategory] = new List<string>
             {
-                "prime [protein] with [carb] accompaniment",
+                "prime [protein] with [grain] accompaniment",
                 "gourmet [protein] atop [vegetable] medley",
-                "luxury [carb] garnished with [protein]",
+                "luxury [grain] garnished with [protein]",
                 "chef's [vegetable] with [protein] crown",
-                "exquisite [protein] and [carb] dish"
+                "exquisite [protein] and [grain] dish"
             };
 
             // Multi-category templates
@@ -260,7 +268,7 @@
             {
                 "[protein] feast with all the trimmings",
                 "gourmet [protein] dinner with sides",
-                "deluxe [carb] platter with assortments",
+                "deluxe [grain] platter with assortments",
                 "luxury sampler featuring [protein]",
                 "chef's masterpiece with [protein]"
             };
@@ -355,7 +363,6 @@
         /// <summary>
         /// Create a default template file with examples
         /// </summary>
-        /// <param name="filePath">The filePath<see cref="string"/></param>
         private static void CreateDefaultTemplateFile(string filePath)
         {
             try
@@ -369,13 +376,12 @@
     <!-- Define templates for each meal quality and type -->
     <!-- Template placeholders:
          [protein] - Will be replaced with protein ingredient (meat, etc.)
-         [carb] - Will be replaced with carb ingredient (rice, potatoes, etc.)
+         [grain] - Will be replaced with grain ingredient (rice, potatoes, etc.)
          [vegetable] - Will be replaced with vegetable ingredient
          [dairy] - Will be replaced with dairy ingredient
-         [fat] - Will be replaced with fat ingredient
-         [sweetener] - Will be replaced with sweetener ingredient
-         [flavoring] - Will be replaced with flavoring ingredient
-         [exotic] - Will be replaced with exotic ingredient
+         [egg] - Will be replaced with egg ingredient
+         [fruit] - Will be replaced with fruit ingredient
+         [fungus] - Will be replaced with fungus ingredient
     -->
     
     <!-- Simple Meal Templates -->
@@ -385,9 +391,9 @@
             <Template>[protein] stew</Template>
             <Template>basic [protein] dish</Template>
             <Template>simple [protein] meal</Template>
-            <Template>[carb] bowl</Template>
-            <Template>plain [carb] dish</Template>
-            <Template>simple [carb] meal</Template>
+            <Template>[grain] bowl</Template>
+            <Template>plain [grain] dish</Template>
+            <Template>simple [grain] meal</Template>
             <Template>[vegetable] medley</Template>
             <Template>simple [vegetable] plate</Template>
             <Template>mixed [vegetable] dish</Template>
@@ -395,12 +401,12 @@
         
         <!-- Two categories of ingredients -->
         <TemplateGroup type=""DualCategory"">
-            <Template>[protein] with [carb]</Template>
+            <Template>[protein] with [grain]</Template>
             <Template>[protein] and [vegetable] plate</Template>
-            <Template>[carb] with [vegetable]</Template>
+            <Template>[grain] with [vegetable]</Template>
             <Template>[vegetable] and [protein] dish</Template>
-            <Template>simple [protein] [carb] meal</Template>
-            <Template>basic [carb] and [vegetable] dish</Template>
+            <Template>simple [protein] [grain] meal</Template>
+            <Template>basic [grain] and [vegetable] dish</Template>
         </TemplateGroup>
         
         <!-- Three or more categories of ingredients -->
@@ -408,7 +414,7 @@
             <Template>mixed meal with [protein]</Template>
             <Template>simple stew with [vegetable]</Template>
             <Template>basic [protein] dish with sides</Template>
-            <Template>plain meal with [carb]</Template>
+            <Template>plain meal with [grain]</Template>
             <Template>hodgepodge with [protein]</Template>
         </TemplateGroup>
         
@@ -437,63 +443,8 @@
         }
 
         /// <summary>
-        /// Generate a dish name based on ingredients and meal quality using templates
-        /// </summary>
-        /// <param name="ingredients">The ingredients<see cref="List{ThingDef}"/></param>
-        /// <param name="mealDef">The mealDef<see cref="ThingDef"/></param>
-        /// <returns>The <see cref="string"/></returns>
-        public static string GenerateDishName(List<ThingDef> ingredients, ThingDef mealDef)
-        {
-            // Sanity check
-            if (ingredients == null || ingredients.Count == 0)
-                return "Mystery Dish";
-
-            // Determine meal quality from the def name
-            MealQuality quality = DetermineMealQuality(mealDef);
-
-            // First try the database for specific combinations
-            string databaseName = DishNameDatabase.GetDishNameForIngredients(ingredients, quality.ToString());
-            if (!string.IsNullOrEmpty(databaseName))
-                return databaseName;
-
-            // Get all ingredient categories present in the meal
-            var categories = GetAllCategories(ingredients);
-
-            // Determine template type based on category diversity
-            TemplateType templateType = DetermineTemplateType(categories);
-
-            // Select a template
-            string template = SelectTemplate(quality, templateType);
-
-            // Fill the template with ingredient names
-            return FillTemplate(template, ingredients, categories);
-        }
-
-        /// <summary>
-        /// Determine the quality level of a meal
-        /// </summary>
-        /// <param name="mealDef">The mealDef<see cref="ThingDef"/></param>
-        /// <returns>The <see cref="MealQuality"/></returns>
-        private static MealQuality DetermineMealQuality(ThingDef mealDef)
-        {
-            if (mealDef == null)
-                return MealQuality.Simple;
-
-            string defName = mealDef.defName;
-
-            if (defName.Contains("Lavish"))
-                return MealQuality.Lavish;
-            else if (defName.Contains("Fine"))
-                return MealQuality.Fine;
-            else
-                return MealQuality.Simple;
-        }
-
-        /// <summary>
         /// Determine the appropriate template type based on ingredient categories
         /// </summary>
-        /// <param name="categories">The categories<see cref="List{IngredientCategory}"/></param>
-        /// <returns>The <see cref="TemplateType"/></returns>
         private static TemplateType DetermineTemplateType(List<IngredientCategory> categories)
         {
             if (categories == null || categories.Count == 0)
@@ -514,9 +465,6 @@
         /// <summary>
         /// Select an appropriate template based on meal quality and composition
         /// </summary>
-        /// <param name="quality">The quality<see cref="MealQuality"/></param>
-        /// <param name="type">The type<see cref="TemplateType"/></param>
-        /// <returns>The <see cref="string"/></returns>
         private static string SelectTemplate(MealQuality quality, TemplateType type)
         {
             // Get templates for this quality and type
@@ -537,10 +485,6 @@
         /// <summary>
         /// Fill a template with actual ingredient names
         /// </summary>
-        /// <param name="template">The template<see cref="string"/></param>
-        /// <param name="ingredients">The ingredients<see cref="List{ThingDef}"/></param>
-        /// <param name="categories">The categories<see cref="List{IngredientCategory}"/></param>
-        /// <returns>The <see cref="string"/></returns>
         private static string FillTemplate(string template, List<ThingDef> ingredients, List<IngredientCategory> categories)
         {
             // Create a working copy of the template
@@ -555,13 +499,13 @@
                 if (result.Contains(placeholder))
                 {
                     // Get ingredients of this category
-                    var categoryIngredients = GetIngredientsOfCategory(ingredients, category);
+                    var categoryIngredients = IngredientCategorizer.GetIngredientsOfCategory(ingredients, category);
 
                     // If we have ingredients of this category, use them
                     if (categoryIngredients.Count > 0)
                     {
                         // Select a representative ingredient
-                        string ingredientName = GetCleanIngredientName(categoryIngredients.RandomElement());
+                        string ingredientName = StringUtils.GetCapitalizedLabel(categoryIngredients.RandomElement().label);
 
                         // Add an adjective sometimes (50% chance)
                         if (Rand.Value < 0.5f && CategoryAdjectives.TryGetValue(category, out var adjectives))
@@ -584,62 +528,28 @@
         }
 
         /// <summary>
-        /// Clean up an ingredient name for display in a dish name
-        /// </summary>
-        /// <param name="ingredient">The ingredient<see cref="ThingDef"/></param>
-        /// <returns>The <see cref="string"/></returns>
-        private static string GetCleanIngredientName(ThingDef ingredient)
-        {
-            if (ingredient == null)
-                return "mystery";
-
-            // Get the base label
-            string label = ingredient.label;
-
-            // Remove "raw" prefix
-            string cleaned = Regex.Replace(label, @"^raw\s+", "", RegexOptions.IgnoreCase);
-
-            // Remove specific qualifiers
-            cleaned = cleaned.Replace(" (unfert.)", "");
-            cleaned = cleaned.Replace(" (fert.)", "");
-            cleaned = cleaned.Replace(" meat", "");
-
-            cleaned = cleaned.Trim();
-
-            // Capitalize first letter
-            if (cleaned.Length > 0)
-            {
-                cleaned = char.ToUpper(cleaned[0]) + cleaned.Substring(1);
-            }
-
-            return cleaned;
-        }
-
-        /// <summary>
         /// Get a generic name for a category when no ingredients are available
         /// </summary>
-        /// <param name="category">The category<see cref="IngredientCategory"/></param>
-        /// <returns>The <see cref="string"/></returns>
         private static string GetGenericCategoryName(IngredientCategory category)
         {
             switch (category)
             {
-                case IngredientCategory.Protein:
+                case IngredientCategory.Meat:
                     return "Protein";
-                case IngredientCategory.Carb:
+                case IngredientCategory.Grain:
                     return "Grains";
                 case IngredientCategory.Vegetable:
                     return "Vegetables";
                 case IngredientCategory.Dairy:
                     return "Dairy";
-                case IngredientCategory.Fat:
-                    return "Fat";
-                case IngredientCategory.Sweetener:
-                    return "Sweetener";
-                case IngredientCategory.Flavoring:
-                    return "Herbs";
-                case IngredientCategory.Exotic:
-                    return "Exotic";
+                case IngredientCategory.Egg:
+                    return "Eggs";
+                case IngredientCategory.Fruit:
+                    return "Fruits";
+                case IngredientCategory.Fungus:
+                    return "Fungi";
+                case IngredientCategory.Special:
+                    return "Special";
                 case IngredientCategory.Other:
                 default:
                     return "Ingredients";
@@ -649,7 +559,6 @@
         /// <summary>
         /// Helper method to get the mod directory
         /// </summary>
-        /// <returns>The <see cref="string"/></returns>
         private static string GetModDirectory()
         {
             try

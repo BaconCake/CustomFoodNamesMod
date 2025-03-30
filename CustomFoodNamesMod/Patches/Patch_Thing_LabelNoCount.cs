@@ -1,7 +1,8 @@
 ﻿using HarmonyLib;
 using RimWorld;
 using Verse;
-using System.Linq;
+using CustomFoodNamesMod.Batch;
+using CustomFoodNamesMod.Generators;
 
 namespace CustomFoodNamesMod.Patches
 {
@@ -39,7 +40,7 @@ namespace CustomFoodNamesMod.Patches
                         if (worker != null && worker.CurJob != null)
                         {
                             int jobId = worker.CurJob.loadID;
-                            string batchName = BatchMealNameHandler.GetBatchMealName(jobId);
+                            string batchName = BatchMealHandler.GetBatchMealName(jobId);
 
                             if (!string.IsNullOrEmpty(batchName))
                             {
@@ -56,9 +57,11 @@ namespace CustomFoodNamesMod.Patches
 
                             if (compIngredients != null && compIngredients.ingredients.Count > 0)
                             {
-                                // Use the simplified nutrient paste generator
-                                customNameComp.AssignedDishName = NutrientPasteNameGenerator.GenerateNutrientPasteName(
-                                    compIngredients.ingredients);
+                                // Use the nutrient paste generator
+                                var generator = new NutrientPasteNameGenerator();
+                                customNameComp.AssignedDishName = generator.GenerateName(
+                                    compIngredients.ingredients,
+                                    __instance.def);
                             }
                             else
                             {
@@ -94,7 +97,7 @@ namespace CustomFoodNamesMod.Patches
                         if (worker != null && worker.CurJob != null)
                         {
                             int jobId = worker.CurJob.loadID;
-                            string batchName = BatchMealNameHandler.GetBatchMealName(jobId);
+                            string batchName = BatchMealHandler.GetBatchMealName(jobId);
 
                             if (!string.IsNullOrEmpty(batchName))
                             {
@@ -111,8 +114,9 @@ namespace CustomFoodNamesMod.Patches
 
                             if (compIngredients != null && compIngredients.ingredients.Count > 0)
                             {
-                                // Use the procedural generator for more complex meals
-                                customNameComp.AssignedDishName = ProceduralDishNameGenerator.GenerateDishName(
+                                // Use the procedural generator
+                                var generator = new ProceduralDishNameGenerator();
+                                customNameComp.AssignedDishName = generator.GenerateName(
                                     compIngredients.ingredients,
                                     __instance.def);
                             }

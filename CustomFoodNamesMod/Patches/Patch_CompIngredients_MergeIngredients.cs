@@ -2,8 +2,9 @@
 using RimWorld;
 using Verse;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
+using CustomFoodNamesMod.Batch;
+using CustomFoodNamesMod.Generators;
 
 namespace CustomFoodNamesMod.Patches
 {
@@ -89,10 +90,9 @@ namespace CustomFoodNamesMod.Patches
                     // Check if this is a nutrient paste meal
                     if (parent.def.defName == "MealNutrientPaste" || parent.def.defName.Contains("NutrientPaste"))
                     {
-                        // Use our simplified nutrient paste name generator
-                        string newDishName = NutrientPasteNameGenerator.GenerateNutrientPasteName(
-                            __instance.ingredients);
-
+                        // Use our nutrient paste name generator
+                        var generator = new NutrientPasteNameGenerator();
+                        string newDishName = generator.GenerateName(__instance.ingredients, parent.def);
                         customNameComp.AssignedDishName = newDishName;
                     }
                     else
@@ -102,7 +102,7 @@ namespace CustomFoodNamesMod.Patches
                         if (worker != null && worker.CurJob != null)
                         {
                             int jobId = worker.CurJob.loadID;
-                            string batchName = BatchMealNameHandler.GetBatchMealName(jobId);
+                            string batchName = BatchMealHandler.GetBatchMealName(jobId);
 
                             if (!string.IsNullOrEmpty(batchName))
                             {
@@ -113,10 +113,7 @@ namespace CustomFoodNamesMod.Patches
                         }
 
                         // No batch name available, use procedural generation
-                        string newDishName = ProceduralDishNameGenerator.GenerateDishName(
-                            __instance.ingredients,
-                            parent.def);
-
+                        string newDishName = GeneratorSelector.GenerateName(__instance.ingredients, parent.def);
                         customNameComp.AssignedDishName = newDishName;
                     }
                 }

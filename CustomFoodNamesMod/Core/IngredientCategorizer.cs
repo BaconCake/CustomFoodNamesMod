@@ -4,27 +4,13 @@ using System.Linq;
 using RimWorld;
 using Verse;
 
-namespace CustomFoodNamesMod
+namespace CustomFoodNamesMod.Core
 {
     /// <summary>
-    /// Handles the categorization of ingredients for procedural dish name generation
+    /// Unified system for categorizing ingredients
     /// </summary>
     public static class IngredientCategorizer
     {
-        // Main ingredient categories
-        public enum IngredientCategory
-        {
-            Meat,       // All animal meats, insects, etc.
-            Vegetable,  // Plant-based ingredients that aren't grains
-            Grain,      // Rice, corn, etc.
-            Egg,        // All types of eggs
-            Dairy,      // Milk and milk products
-            Fruit,      // Berries and fruits
-            Fungus,     // Mushrooms and fungi
-            Special,    // Ingredients with special naming importance
-            Other       // Default category for uncategorized items
-        }
-
         // Cache of ingredient categories to avoid recalculating
         private static Dictionary<string, IngredientCategory> ingredientCategoryCache =
             new Dictionary<string, IngredientCategory>();
@@ -186,23 +172,35 @@ namespace CustomFoodNamesMod
         }
 
         /// <summary>
-        /// Check if a meal is vegetarian (contains no meat)
+        /// Get all distinct categories present in a list of ingredients
         /// </summary>
-        public static bool IsMealVegetarian(List<ThingDef> ingredients)
+        public static List<IngredientCategory> GetAllCategories(List<ThingDef> ingredients)
         {
-            return !ingredients.Any(i => GetIngredientCategory(i) == IngredientCategory.Meat);
+            if (ingredients == null || ingredients.Count == 0)
+                return new List<IngredientCategory>();
+
+            return ingredients
+                .Select(i => GetIngredientCategory(i))
+                .Distinct()
+                .ToList();
         }
 
         /// <summary>
-        /// Check if a meal is carnivore (contains only meat and no plants)
+        /// Get a representative ingredient from a specific category
         /// </summary>
-        public static bool IsMealCarnivore(List<ThingDef> ingredients)
+        public static ThingDef GetRepresentativeIngredient(List<ThingDef> ingredients, IngredientCategory category)
         {
-            var categories = ingredients.Select(i => GetIngredientCategory(i)).Distinct();
-            return categories.Contains(IngredientCategory.Meat) &&
-                  !categories.Contains(IngredientCategory.Vegetable) &&
-                  !categories.Contains(IngredientCategory.Fruit) &&
-                  !categories.Contains(IngredientCategory.Grain);
+            // Get all ingredients of this category
+            var categoryIngredients = GetIngredientsOfCategory(ingredients, category);
+
+            if (categoryIngredients.Count == 0)
+                return null;
+
+            // Find the most common ingredient in this category
+            return categoryIngredients.GroupBy(i => i.defName)
+                .OrderByDescending(g => g.Count())
+                .First()
+                .First();
         }
 
         /// <summary>

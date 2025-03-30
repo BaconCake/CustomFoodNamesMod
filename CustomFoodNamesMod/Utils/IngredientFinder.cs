@@ -4,9 +4,9 @@ using System.IO;
 using System.Linq;
 using RimWorld;
 using Verse;
-using static CustomFoodNamesMod.IngredientCategoryResolver;
+using CustomFoodNamesMod.Core;
 
-namespace CustomFoodNamesMod
+namespace CustomFoodNamesMod.Utils
 {
     [StaticConstructorOnStartup]
     public static class IngredientFinder
@@ -59,7 +59,7 @@ namespace CustomFoodNamesMod
             {
                 // Get all ThingDefs that are valid cooking ingredients
                 var allPotentialIngredients = DefDatabase<ThingDef>.AllDefs
-                    .Where(def => IsValidCookingIngredient(def))
+                    .Where(def => IngredientUtils.IsValidCookingIngredient(def))
                     .ToList();
 
                 Log.Message($"[CustomFoodNames] Found {allPotentialIngredients.Count} potential ingredients");
@@ -71,7 +71,7 @@ namespace CustomFoodNamesMod
                 foreach (var ingredient in allPotentialIngredients)
                 {
                     // Get the category using our resolver
-                    var category = GetIngredientCategory(ingredient);
+                    var category = IngredientCategorizer.GetIngredientCategory(ingredient);
 
                     // If it's "Other" or the category was inferred (not explicitly mapped),
                     // add it to our uncategorized list, but exclude animal feed
@@ -86,27 +86,7 @@ namespace CustomFoodNamesMod
                 string modDir = GetModDirectory();
                 if (!string.IsNullOrEmpty(modDir))
                 {
-                    string uncategorizedPath = Path.Combine(modDir, "UncategorizedIngredients.xml");
-
-                    // Create XML template focused only on ingredient list
-                    string xmlContent = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                                     "<IngredientCategories>\n" +
-                                     "    <!-- These ingredients need to be categorized -->\n" +
-                                     "    <!-- Available categories: Protein, Carb, Vegetable, Dairy, Fat, Sweetener, Flavoring, Exotic, Other -->\n\n";
-
-                    foreach (var ingredient in uncategorizedIngredients)
-                    {
-                        xmlContent += $"    <IngredientMapping>\n" +
-                                      $"        <DefName>{ingredient.defName}</DefName>\n" +
-                                      $"        <!-- {ingredient.label} -->\n" +
-                                      $"        <Category>Other</Category> <!-- Update with correct category -->\n" +
-                                      $"    </IngredientMapping>\n\n";
-                    }
-
-                    xmlContent += "</IngredientCategories>";
-
-                    File.WriteAllText(uncategorizedPath, xmlContent);
-                    Log.Message($"[CustomFoodNames] Written uncategorized ingredients to: {uncategorizedPath}");
+                    SaveUncategorizedIngredients(modDir, uncategorizedIngredients);
                 }
             }
             catch (Exception ex)
@@ -116,48 +96,31 @@ namespace CustomFoodNamesMod
         }
 
         /// <summary>
-        /// Determines if a ThingDef is a valid cooking ingredient in RimWorld
+        /// Save uncategorized ingredients to an XML file
         /// </summary>
-        private static bool IsValidCookingIngredient(ThingDef def)
+        private static void SaveUncategorizedIngredients(string modDir, List<ThingDef> ingredients)
         {
-            // Skip if not ingestible or is a corpse
-            if (!def.IsIngestible || def.IsCorpse)
-                return false;
+            string uncategorizedPath = Path.Combine(modDir, "UncategorizedIngredients.xml");
 
-            // Skip drugs and alcohol
-            if (def.ingestible?.drugCategory != DrugCategory.None)
-                return false;
+            // Create XML template focused only on ingredient list
+            string xmlContent = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                             "<IngredientCategories>\n" +
+                             "    <!-- These ingredients need to be categorized -->\n" +
+                             "    <!-- Available categories: Meat, Vegetable, Grain, Egg, Dairy, Fruit, Fungus, Special, Other -->\n\n";
 
-            // Skip prepared meals (they shouldn't be ingredients)
-            if (def.defName.StartsWith("Meal") || def.defName == "Kibble" || def.defName == "Pemmican")
-                return false;
+            foreach (var ingredient in ingredients)
+            {
+                xmlContent += $"    <IngredientMapping>\n" +
+                              $"        <DefName>{ingredient.defName}</DefName>\n" +
+                              $"        <!-- {ingredient.label} -->\n" +
+                              $"        <Category>Other</Category> <!-- Update with correct category -->\n" +
+                              $"    </IngredientMapping>\n\n";
+            }
 
-            // Skip plants (we want the harvested product, not the plant itself)
-            if (def.defName.StartsWith("Plant_"))
-                return false;
+            xmlContent += "</IngredientCategories>";
 
-            // Skip serums and medicine
-            if (def.defName.EndsWith("Serum") || def.IsMedicine)
-                return false;
-
-            // Skip HemogenPack and BabyFood
-            if (def.defName == "HemogenPack" || def.defName == "BabyFood")
-                return false;
-
-            // Skip things with drug food type
-            if (def.ingestible?.foodType == FoodTypeFlags.Liquor)
-                return false;
-
-            // Focus on things that are actually used in cooking
-            bool isRawFood = def.defName.StartsWith("Raw") ||      // RawPotatoes, RawRice, etc.
-                             def.defName.StartsWith("Meat_") ||    // Meat_Cow, Meat_Chicken, etc.
-                             def.defName.StartsWith("Egg") ||      // EggChickenUnfertilized, etc.
-                             def.defName == "Milk" ||
-                             def.defName == "InsectJelly" ||
-                             def.defName == "Hay" ||
-                             def.defName == "Chocolate";
-
-            return isRawFood;
+            File.WriteAllText(uncategorizedPath, xmlContent);
+            Log.Message($"[CustomFoodNames] Written uncategorized ingredients to: {uncategorizedPath}");
         }
 
         /// <summary>

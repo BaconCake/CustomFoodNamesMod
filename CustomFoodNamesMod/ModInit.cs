@@ -12,7 +12,7 @@ namespace CustomFoodNamesMod
 
             var harmony = new Harmony("com.myfoodmod.patch");
 
-            // Apply the manual patch for MergeIngredients (original code)
+            // Apply the manual patch for MergeIngredients
             Patch_CompIngredients_MergeIngredients.Apply(harmony);
 
             // Patch everything else automatically

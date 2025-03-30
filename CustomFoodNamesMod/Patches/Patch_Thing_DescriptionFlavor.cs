@@ -3,88 +3,11 @@ using System.Linq;
 using HarmonyLib;
 using RimWorld;
 using Verse;
+using CustomFoodNamesMod.Utils;
+using CustomFoodNamesMod.Generators;
 
 namespace CustomFoodNamesMod.Patches
 {
-    /// <summary>
-    /// Helper class for formatting ingredient lists
-    /// </summary>
-    public static class IngredientListFormatter
-    {
-        /// <summary>
-        /// Format the ingredients list for display in the description
-        /// </summary>
-        /// <param name="ingredients">The ingredients<see cref="List{ThingDef}"/></param>
-        /// <returns>The <see cref="string"/></returns>
-        public static string FormatIngredientsList(List<ThingDef> ingredients)
-        {
-            if (ingredients.Count == 0)
-                return "unknown ingredients";
-
-            // Group ingredients by name to avoid repetition
-            var groupedIngredients = ingredients
-                .GroupBy(i => i.defName)
-                .Select(g => new
-                {
-                    Label = CleanIngredientLabel(g.First().label),
-                    Count = g.Count()
-                })
-                .OrderByDescending(x => x.Count)
-                .ToList();
-
-            // Build a readable list
-            var result = new List<string>();
-            foreach (var ingredient in groupedIngredients)
-            {
-                // Only mention count if there's more than one
-                if (ingredient.Count > 1)
-                    result.Add($"{ingredient.Label} (x{ingredient.Count})");
-                else
-                    result.Add(ingredient.Label);
-            }
-
-            // Format the final list
-            if (result.Count == 1)
-                return result[0];
-
-            if (result.Count == 2)
-                return $"{result[0]} and {result[1]}";
-
-            return string.Join(", ", result.Take(result.Count - 1)) + ", and " + result.Last();
-        }
-
-        /// <summary>
-        /// Clean up ingredient names for better display
-        /// </summary>
-        /// <param name="label">The label<see cref="string"/></param>
-        /// <returns>The <see cref="string"/></returns>
-        public static string CleanIngredientLabel(string label)
-        {
-            if (string.IsNullOrEmpty(label))
-                return "unknown ingredient";
-
-            // Remove "raw" prefix
-            string cleaned = System.Text.RegularExpressions.Regex.Replace(
-                label,
-                @"^raw\s+",
-                "",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-            // Some specific replacements
-            cleaned = cleaned.Replace(" (unfert.)", "");
-            cleaned = cleaned.Replace(" (fert.)", "");
-            cleaned = cleaned.Trim();
-
-            // Ensure first letter is lowercase for listing in text
-            if (cleaned.Length > 0)
-            {
-                cleaned = char.ToLower(cleaned[0]) + cleaned.Substring(1);
-            }
-
-            return cleaned;
-        }
-    }
-
     [HarmonyPatch(typeof(Thing), "DescriptionFlavor", MethodType.Getter)]
     public static class Patch_Thing_DescriptionFlavor
     {
@@ -107,7 +30,7 @@ namespace CustomFoodNamesMod.Patches
                 }
 
                 // Get ingredients from the meal
-                var compIngredients = twc.TryGetComp<CompIngredients>();
+                var compIngredients = twc.GetComp<CompIngredients>();
                 if (compIngredients == null || compIngredients.ingredients.Count == 0)
                 {
                     // No ingredients found, add minimal description
@@ -136,36 +59,17 @@ namespace CustomFoodNamesMod.Patches
                     customDescription = $"\n\n{dishInfo.Description}";
                 }
 
-                // If no custom description was found, fall back to the procedural generator
+                // If no custom description was found, generate one
                 if (string.IsNullOrEmpty(customDescription))
                 {
                     if (__instance.def.defName.Contains("NutrientPaste"))
                     {
-                        // Custom description for nutrient paste
-                        string ingredientsList = IngredientListFormatter.FormatIngredientsList(compIngredients.ingredients);
-                        customDescription = $"\n\nThis is a {customNameComp.AssignedDishName} made from processed {ingredientsList}. " +
-                                          "The nutritional value is adequate, but the taste leaves much to be desired.";
-                    }
-                    else if (__instance.def.defName.Contains("Lavish"))
-                    {
-                        // Custom description for lavish meals
-                        string ingredientsList = IngredientListFormatter.FormatIngredientsList(compIngredients.ingredients);
-                        customDescription = $"\n\nThis is a {customNameComp.AssignedDishName}, a lavishly prepared dish containing {ingredientsList}. " +
-                                         "It has been expertly crafted to be both nutritious and delicious.";
-                    }
-                    else if (__instance.def.defName.Contains("Fine"))
-                    {
-                        // Custom description for fine meals
-                        string ingredientsList = IngredientListFormatter.FormatIngredientsList(compIngredients.ingredients);
-                        customDescription = $"\n\nThis is a {customNameComp.AssignedDishName}, a well-prepared dish containing {ingredientsList}. " +
-                                         "It has been skillfully made to balance nutrition and taste.";
+                        var generator = new NutrientPasteNameGenerator();
+                        customDescription = $"\n\n{generator.GenerateDescription(compIngredients.ingredients, __instance.def)}";
                     }
                     else
                     {
-                        // Custom description for simple meals
-                        string ingredientsList = IngredientListFormatter.FormatIngredientsList(compIngredients.ingredients);
-                        customDescription = $"\n\nThis is a {customNameComp.AssignedDishName}, a basic dish containing {ingredientsList}. " +
-                                         "It offers good nutrition although the taste is simple.";
+                        customDescription = $"\n\n{GeneratorSelector.GenerateDescription(compIngredients.ingredients, __instance.def)}";
                     }
                 }
 
@@ -180,7 +84,7 @@ namespace CustomFoodNamesMod.Patches
                     // Add ingredient category information
                     __result += "<color=#A9A9A9>Ingredient categories: ";
                     var categories = compIngredients.ingredients
-                        .Select(i => IngredientCategorizer.GetIngredientCategory(i).ToString())
+                        .Select(i => Core.IngredientCategorizer.GetIngredientCategory(i).ToString())
                         .Distinct()
                         .ToList();
                     __result += string.Join(", ", categories);
