@@ -272,7 +272,7 @@ namespace CustomFoodNamesMod.Generators
             {
                 dishName = $"{FineMealPrefixes.RandomElement()} {dishName}";
             }
-            else if (quality == MealQuality.Lavish && Rand.Value < 0.7f)
+            else if (quality == MealQuality.Lavish)
             {
                 dishName = $"{LavishMealPrefixes.RandomElement()} {dishName}";
             }

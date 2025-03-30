@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Verse;
-using CustomFoodNamesMod.Database;
-using CustomFoodNamesMod.Utils;
-
-namespace CustomFoodNamesMod
+﻿namespace CustomFoodNamesMod
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using CustomFoodNamesMod.Database;
+    using CustomFoodNamesMod.Utils;
+    using Verse;
+
     /// <summary>
     /// Database of dish names based on ingredients
     /// </summary>
@@ -37,6 +37,10 @@ namespace CustomFoodNamesMod
             new Dictionary<string, Dictionary<string, Dictionary<string, List<DishEntry>>>>();
 
         // Fallback patterns for ingredients not in database
+
+        /// <summary>
+        /// Defines the FallbackPatterns
+        /// </summary>
         private static readonly List<string> FallbackPatterns = new List<string>
         {
             "{0} dish",
@@ -47,13 +51,21 @@ namespace CustomFoodNamesMod
         };
 
         // Track missing ingredients we've seen for logging purposes
+
+        /// <summary>
+        /// Defines the reportedMissingIngredients
+        /// </summary>
         private static HashSet<string> reportedMissingIngredients = new HashSet<string>();
 
         // Flag to enable/disable logging of missing ingredients
+
+        /// <summary>
+        /// Defines the LogMissingIngredients
+        /// </summary>
         public static bool LogMissingIngredients = false;
 
         /// <summary>
-        /// Initialize the database
+        /// Initializes static members of the <see cref="DishNameDatabase"/> class.
         /// </summary>
         static DishNameDatabase()
         {
@@ -76,6 +88,9 @@ namespace CustomFoodNamesMod
         /// <summary>
         /// Gets dish info (name and description) for a list of ingredients
         /// </summary>
+        /// <param name="ingredients">The ingredients<see cref="List{ThingDef}"/></param>
+        /// <param name="mealQuality">The mealQuality<see cref="string"/></param>
+        /// <returns>The <see cref="DishInfo"/></returns>
         public static DishInfo GetDishInfoForIngredients(List<ThingDef> ingredients, string mealQuality = null)
         {
             if (ingredients == null || ingredients.Count == 0)
@@ -122,9 +137,99 @@ namespace CustomFoodNamesMod
                     result = GetRandomDishInfo(ingredients[0].defName, mealQuality);
                     if (result != null)
                     {
-                        result = new DishInfo(
-                            result.Name + " with " + StringUtils.GetCapitalizedLabel(ingredients[1].label),
-                            result.Description + " " + StringUtils.GetCapitalizedLabel(ingredients[1].label) + " adds a complementary flavor.");
+                        string secondaryLabel = StringUtils.GetCapitalizedLabel(ingredients[1].label);
+
+                        // Apply quality-specific formatting based on meal quality
+                        if (mealQuality == "Lavish")
+                        {
+                            string[] lavishFormats = new string[] {
+                        "{0} accompanied by exquisite {1}",
+                        "{0} with delicate {1} accent",
+                        "{0} served atop artisanal {1}",
+                        "Gourmet {0} with {1} infusion",
+                        "Luxurious {0} with {1} accompaniment",
+                        "Chef's special {0} with premium {1}",
+                        "Decadent {0} with fine {1} garnish",
+                        "Sumptuous {0} presented with elegant {1}",
+                        "Extravagant {0} paired with {1} reduction"
+                    };
+                            string format = lavishFormats[Rand.Range(0, lavishFormats.Length)];
+
+                            // Generate a lavish name and description
+                            string lavishName = string.Format(format, result.Name, secondaryLabel);
+                            // Remove any contradictory terms that might exist in the database name
+                            lavishName = lavishName.Replace("Simple ", "").Replace("Basic ", "").Replace("Plain ", "");
+
+                            string lavishDesc = result.Description + " The " + secondaryLabel.ToLower() +
+                                " adds sophistication to this lavish creation, elevating it to a gourmet experience.";
+
+                            result = new DishInfo(lavishName, lavishDesc);
+                        }
+                        else if (mealQuality == "Fine")
+                        {
+                            string[] fineFormats = new string[] {
+                        "Quality {0} with {1}",
+                        "Fine {0} with {1} accent",
+                        "Well-crafted {0} with {1}",
+                        "Refined {0} and {1} plate"
+                    };
+                            string format = fineFormats[Rand.Range(0, fineFormats.Length)];
+
+                            // Generate a fine name and description
+                            string fineName = string.Format(format, result.Name, secondaryLabel);
+                            // Remove any contradictory terms
+                            fineName = fineName.Replace("Simple ", "").Replace("Basic ", "").Replace("Plain ", "");
+
+                            string fineDesc = result.Description + " The " + secondaryLabel.ToLower() +
+                                " adds a refined touch to this well-prepared meal.";
+
+                            result = new DishInfo(fineName, fineDesc);
+                        }
+                        else
+                        {
+                            // Original behavior for simple meals
+                            result = new DishInfo(
+                                result.Name + " with " + secondaryLabel,
+                                result.Description + " " + secondaryLabel + " adds a complementary flavor.");
+                        }
+                    }
+                    else
+                    {
+                        // If no dish info found even for the first ingredient, create a quality-appropriate fallback
+                        string primaryLabel = StringUtils.GetCapitalizedLabel(ingredients[0].label);
+                        string secondaryLabel = StringUtils.GetCapitalizedLabel(ingredients[1].label);
+
+                        string name;
+                        string description;
+
+                        if (mealQuality == "Lavish")
+                        {
+                            string[] lavishTemplates = new string[] {
+                        "Gourmet {0} with {1}",
+                        "Luxurious {0} and {1} creation",
+                        "Chef's special {0} with {1}",
+                        "Exquisite {0} and {1} platter"
+                    };
+                            name = string.Format(lavishTemplates[Rand.Range(0, lavishTemplates.Length)], primaryLabel, secondaryLabel);
+                            description = $"A lavishly prepared dish featuring premium {primaryLabel.ToLower()} and {secondaryLabel.ToLower()}, expertly combined for a gourmet dining experience.";
+                        }
+                        else if (mealQuality == "Fine")
+                        {
+                            string[] fineTemplates = new string[] {
+                        "Quality {0} with {1}",
+                        "Fine {0} and {1} dish",
+                        "Well-prepared {0} with {1}"
+                    };
+                            name = string.Format(fineTemplates[Rand.Range(0, fineTemplates.Length)], primaryLabel, secondaryLabel);
+                            description = $"A well-crafted meal combining {primaryLabel.ToLower()} and {secondaryLabel.ToLower()} for a balanced and satisfying dining experience.";
+                        }
+                        else
+                        {
+                            name = $"{primaryLabel} and {secondaryLabel} dish";
+                            description = $"A simple meal combining {primaryLabel.ToLower()} and {secondaryLabel.ToLower()}.";
+                        }
+
+                        result = new DishInfo(name, description);
                     }
                 }
             }
@@ -135,11 +240,57 @@ namespace CustomFoodNamesMod
                     ingredients[0].defName,
                     ingredients[1].defName,
                     ingredients[2].defName);
+
+                // Fallback for three ingredients if no specific combo found
+                if (result == null && !string.IsNullOrEmpty(mealQuality))
+                {
+                    string primaryLabel = StringUtils.GetCapitalizedLabel(ingredients[0].label);
+
+                    if (mealQuality == "Lavish")
+                    {
+                        string[] ingredientLabels = ingredients
+                            .Select(i => StringUtils.GetCapitalizedLabel(i.label).ToLower())
+                            .ToArray();
+
+                        string[] lavishTrioTemplates = new string[] {
+                    $"Gourmet Trio of {ingredientLabels[0]}, {ingredientLabels[1]}, and {ingredientLabels[2]}",
+                    $"Chef's Masterpiece with {ingredientLabels[0]}, {ingredientLabels[1]}, and {ingredientLabels[2]}",
+                    $"Luxurious {primaryLabel} Ensemble",
+                    $"Extravagant {primaryLabel} Three-Way"
+                };
+
+                        string name = lavishTrioTemplates[Rand.Range(0, lavishTrioTemplates.Length)];
+                        string description = $"A sumptuous meal featuring a lavish combination of {string.Join(", ", ingredientLabels)}, prepared with culinary expertise.";
+
+                        result = new DishInfo(name, description);
+                    }
+                }
             }
             else
             {
-                // For more complex combinations, return null
-                result = null;
+                // For more complex combinations with 4+ ingredients
+                if (!string.IsNullOrEmpty(mealQuality) && mealQuality == "Lavish")
+                {
+                    string primaryLabel = StringUtils.GetCapitalizedLabel(ingredients[0].label);
+
+                    string[] lavishMultiTemplates = new string[] {
+                $"Gourmet {primaryLabel} Feast",
+                $"Chef's Grand Selection",
+                $"Luxurious Culinary Medley",
+                $"Extravagant Multi-Ingredient Creation",
+                $"Decadent {primaryLabel} Showcase"
+            };
+
+                    string name = lavishMultiTemplates[Rand.Range(0, lavishMultiTemplates.Length)];
+                    string description = "An exquisite meal featuring multiple premium ingredients, masterfully combined to create a lavish dining experience.";
+
+                    result = new DishInfo(name, description);
+                }
+                else
+                {
+                    // Default for other meal qualities with many ingredients
+                    result = null;
+                }
             }
 
             Rand.PopState(); // Restore previous random state
@@ -150,16 +301,25 @@ namespace CustomFoodNamesMod
         /// Gets a dish name for a list of ingredients, using the database for small combos
         /// and falling back to procedural generation for complex combinations
         /// </summary>
+        /// <param name="ingredients">The ingredients<see cref="List{ThingDef}"/></param>
+        /// <param name="mealQuality">The mealQuality<see cref="string"/></param>
+        /// <returns>The <see cref="string"/></returns>
         public static string GetDishNameForIngredients(List<ThingDef> ingredients, string mealQuality = null)
         {
             DishInfo info = GetDishInfoForIngredients(ingredients, mealQuality);
 
             if (info != null)
+            {
+                Log.Message($"[CustomFoodNames] Using database name: {info.Name}");
                 return info.Name;
+            }
 
             // Fall back to a simple name if no dish info found
             if (ingredients.Count > 0)
+            {
+                Log.Message($"[CustomFoodNames] Using fallback name for: {ingredients[0].defName}");
                 return StringUtils.GetCapitalizedLabel(ingredients[0].label) + " dish";
+            }
 
             return "Mystery meal";
         }
@@ -167,14 +327,21 @@ namespace CustomFoodNamesMod
         /// <summary>
         /// Gets dish info for a single ingredient, with fallback to generated names
         /// </summary>
+        /// <param name="ingredientDefName">The ingredientDefName<see cref="string"/></param>
+        /// <param name="mealQuality">The mealQuality<see cref="string"/></param>
+        /// <returns>The <see cref="DishInfo"/></returns>
         public static DishInfo GetRandomDishInfo(string ingredientDefName, string mealQuality = null)
         {
+            // Log attempts
+            Log.Message($"[CustomFoodNames] Looking up: {ingredientDefName} with quality {mealQuality ?? "none"}");
+
             // Try quality-specific lookup first if quality is provided
             if (!string.IsNullOrEmpty(mealQuality) &&
                 IngredientToQualityDishEntries.TryGetValue(ingredientDefName, out var qualityDict) &&
                 qualityDict.TryGetValue(mealQuality, out List<DishEntry> qualityDishEntries) &&
                 qualityDishEntries.Count > 0)
             {
+                Log.Message($"[CustomFoodNames] Found quality-specific entry for {ingredientDefName}");
                 var entry = qualityDishEntries.RandomElement();
                 return new DishInfo(entry.Name, entry.Description);
             }
@@ -183,6 +350,7 @@ namespace CustomFoodNamesMod
             if (IngredientToDishEntries.TryGetValue(ingredientDefName, out List<DishEntry> dishEntries) &&
                 dishEntries.Count > 0)
             {
+                Log.Message($"[CustomFoodNames] Found basic entry for {ingredientDefName}");
                 var entry = dishEntries.RandomElement();
                 return new DishInfo(entry.Name, entry.Description);
             }
@@ -226,6 +394,9 @@ namespace CustomFoodNamesMod
         /// <summary>
         /// Gets dish info for a combination of two ingredients
         /// </summary>
+        /// <param name="ingredient1">The ingredient1<see cref="string"/></param>
+        /// <param name="ingredient2">The ingredient2<see cref="string"/></param>
+        /// <returns>The <see cref="DishInfo"/></returns>
         public static DishInfo GetRandomComboDishInfo(string ingredient1, string ingredient2)
         {
             // Return null if we don't have both ingredients
@@ -248,6 +419,10 @@ namespace CustomFoodNamesMod
         /// <summary>
         /// Gets dish info for a combination of three ingredients
         /// </summary>
+        /// <param name="ingredient1">The ingredient1<see cref="string"/></param>
+        /// <param name="ingredient2">The ingredient2<see cref="string"/></param>
+        /// <param name="ingredient3">The ingredient3<see cref="string"/></param>
+        /// <returns>The <see cref="DishInfo"/></returns>
         public static DishInfo GetRandomThreeComboDishInfo(string ingredient1, string ingredient2, string ingredient3)
         {
             // Return null if we don't have all three ingredients
