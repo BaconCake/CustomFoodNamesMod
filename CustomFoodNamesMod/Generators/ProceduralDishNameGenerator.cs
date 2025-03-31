@@ -27,6 +27,19 @@ namespace CustomFoodNamesMod.Generators
             "{0} Casserole"
         };
 
+        // Template formats specifically for twisted meat
+        private static readonly List<string> TwistedMeatTemplates = new List<string>
+        {
+            "Eldritch {0} Stew",
+            "Anomalous {0} Dish",
+            "Warped {0} Roast",
+            "Strange {0} Medley",
+            "Unsettling {0} Delicacy",
+            "Peculiar {0} Creation",
+            "Distorted {0} Recipe",
+            "Uncanny {0} Platter"
+        };
+
         // Template formats for vegetable-based dishes
         private static readonly List<string> VegetableDishTemplates = new List<string>
         {
@@ -133,6 +146,9 @@ namespace CustomFoodNamesMod.Generators
             if (ingredients == null || ingredients.Count == 0)
                 return "Mystery Dish";
 
+            // Check for twisted meat first
+            bool containsTwistedMeat = HasTwistedMeat(ingredients);
+
             // Determine meal quality based on its def name
             MealQuality mealQuality = DetermineMealQuality(mealDef);
             string qualityString = mealQuality.ToString();
@@ -145,8 +161,8 @@ namespace CustomFoodNamesMod.Generators
                     return databaseName;
             }
 
-            // Generate a procedural name
-            return GenerateProceduralName(ingredients, mealQuality);
+            // Generate a procedural name with special handling for twisted meat
+            return GenerateProceduralName(ingredients, mealQuality, containsTwistedMeat);
         }
 
         /// <summary>
@@ -157,30 +173,54 @@ namespace CustomFoodNamesMod.Generators
             if (ingredients == null || ingredients.Count == 0)
                 return "A mysterious meal with unknown ingredients.";
 
+            // Check for twisted meat
+            bool containsTwistedMeat = HasTwistedMeat(ingredients);
+
             // Determine meal quality
             MealQuality mealQuality = DetermineMealQuality(mealDef);
 
             // Get ingredient list for description
             string ingredientList = IngredientUtils.FormatIngredientsList(ingredients);
 
-            // Build appropriate description based on meal quality
+            // Build appropriate description based on meal quality and ingredients
+            string baseDescription;
             switch (mealQuality)
             {
                 case MealQuality.Lavish:
-                    return $"A lavishly prepared dish containing {ingredientList}. It has been expertly crafted to be both nutritious and delicious.";
-
+                    baseDescription = $"A lavishly prepared dish containing {ingredientList}. It has been expertly crafted to be both nutritious and delicious.";
+                    break;
                 case MealQuality.Fine:
-                    return $"A well-prepared dish containing {ingredientList}. It has been skillfully made to balance nutrition and taste.";
-
+                    baseDescription = $"A well-prepared dish containing {ingredientList}. It has been skillfully made to balance nutrition and taste.";
+                    break;
                 default: // Simple
-                    return $"A basic dish containing {ingredientList}. It offers good nutrition although the taste is simple.";
+                    baseDescription = $"A basic dish containing {ingredientList}. It offers good nutrition although the taste is simple.";
+                    break;
             }
+
+            // Add special description for twisted meat
+            if (containsTwistedMeat)
+            {
+                baseDescription += " The twisted meat gives this dish a strange, otherworldly quality that's both fascinating and slightly disturbing.";
+            }
+
+            return baseDescription;
+        }
+
+        /// <summary>
+        /// Check if the ingredients contain twisted meat
+        /// </summary>
+        private bool HasTwistedMeat(List<ThingDef> ingredients)
+        {
+            return ingredients.Any(i =>
+                i.defName.Contains("TwistedMeat") ||
+                i.defName.Contains("Meat_Twisted") ||
+                (i.label != null && i.label.ToLower().Contains("twisted meat")));
         }
 
         /// <summary>
         /// Core method to generate a procedural dish name
         /// </summary>
-        private static string GenerateProceduralName(List<ThingDef> ingredients, MealQuality mealQuality)
+        private static string GenerateProceduralName(List<ThingDef> ingredients, MealQuality mealQuality, bool hasTwistedMeat)
         {
             // Get the primary category and dominant ingredients
             IngredientCategory primaryCategory = IngredientCategorizer.GetPrimaryMealCategory(ingredients);
@@ -203,7 +243,8 @@ namespace CustomFoodNamesMod.Generators
                 ingredientLabels,
                 mealQuality,
                 isVegetarian,
-                isCarnivore);
+                isCarnivore,
+                hasTwistedMeat);
 
             return dishName;
         }
@@ -216,13 +257,25 @@ namespace CustomFoodNamesMod.Generators
             List<string> ingredientLabels,
             MealQuality quality,
             bool isVegetarian,
-            bool isCarnivore)
+            bool isCarnivore,
+            bool hasTwistedMeat)
         {
             // Ensure we have at least one ingredient label
             if (ingredientLabels.Count == 0)
                 return "Mystery Dish";
 
             string primaryIngredient = ingredientLabels[0];
+
+            // Special handling for twisted meat
+            if (hasTwistedMeat || primaryIngredient.Contains("Twisted"))
+            {
+                // Ensure consistent capitalization
+                primaryIngredient = "Twisted Meat";
+
+                // Use special twisted meat templates
+                string twistedTemplate = TwistedMeatTemplates.RandomElement();
+                return string.Format(twistedTemplate, primaryIngredient);
+            }
 
             // Get secondary ingredient if available
             string secondaryIngredient = ingredientLabels.Count > 1
@@ -263,9 +316,9 @@ namespace CustomFoodNamesMod.Generators
                     break;
             }
 
-            // Select a template and fill it
-            string template = templates.RandomElement();
-            string dishName = string.Format(template, primaryIngredient, secondaryIngredient);
+            // Select a template and fill it - renamed variable to avoid conflict
+            string selectedTemplate = templates.RandomElement();
+            string dishName = string.Format(selectedTemplate, primaryIngredient, secondaryIngredient);
 
             // For fine and lavish meals, sometimes add a quality prefix
             if (quality == MealQuality.Fine && Rand.Value < 0.5f)
@@ -287,7 +340,20 @@ namespace CustomFoodNamesMod.Generators
         {
             var result = new List<ThingDef>();
 
-            // First look for special case ingredients
+            // First, prioritize twisted meat if present
+            var twistedMeat = ingredients.FirstOrDefault(i =>
+                i.defName.Contains("TwistedMeat") ||
+                i.defName.Contains("Meat_Twisted") ||
+                (i.label != null && i.label.ToLower().Contains("twisted meat")));
+
+            if (twistedMeat != null)
+            {
+                result.Add(twistedMeat);
+                if (result.Count >= count)
+                    return result;
+            }
+
+            // Then look for special case ingredients
             foreach (var ingredient in ingredients)
             {
                 if (IngredientCategorizer.specialCaseIngredients.Contains(ingredient.defName))

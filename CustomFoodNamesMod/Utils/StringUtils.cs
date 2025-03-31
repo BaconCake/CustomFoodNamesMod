@@ -15,6 +15,13 @@ namespace CustomFoodNamesMod.Utils
             if (string.IsNullOrEmpty(label))
                 return "unknown ingredient";
 
+            // Handle special case for twisted meat before anything else
+            if (label.Contains("twisted meat") || label.Contains("Twisted meat") ||
+                label.Contains("twisted flesh") || label.Contains("TwistedMeat"))
+            {
+                return "twisted meat"; // Always return consistent form for twisted meat
+            }
+
             // Remove "raw" prefix
             string cleaned = Regex.Replace(label, @"^raw\s+", "", RegexOptions.IgnoreCase);
 
@@ -22,6 +29,7 @@ namespace CustomFoodNamesMod.Utils
             cleaned = cleaned.Replace(" (unfert.)", "");
             cleaned = cleaned.Replace(" (fert.)", "");
             cleaned = cleaned.Replace(" meat", "");
+
             cleaned = cleaned.Trim();
 
             // Ensure first letter is lowercase for listing in text
@@ -38,6 +46,13 @@ namespace CustomFoodNamesMod.Utils
         /// </summary>
         public static string GetCapitalizedLabel(string label)
         {
+            // Special case for twisted meat
+            if (label.Contains("twisted meat") || label.Contains("Twisted meat") ||
+                label.Contains("twisted flesh") || label.Contains("TwistedMeat"))
+            {
+                return "Twisted Meat"; // Always return capitalized form
+            }
+
             string cleaned = CleanIngredientLabel(label);
 
             // Capitalize first letter

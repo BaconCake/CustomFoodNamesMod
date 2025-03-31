@@ -18,7 +18,7 @@ namespace CustomFoodNamesMod.Core
         // Special case ingredients with their own dedicated naming logic
         public static HashSet<string> specialCaseIngredients = new HashSet<string>
         {
-            "RawPotatoes",
+            // Removed RawPotatoes from special cases
             "RawRice",
             "Milk",
             "InsectJelly",
@@ -70,6 +70,12 @@ namespace CustomFoodNamesMod.Core
                 return IngredientCategory.Meat;
             }
 
+            // Handle twisted meat as a special case of meat
+            if (defName.Contains("TwistedMeat") || (ingredient.label != null && ingredient.label.Contains("twisted meat")))
+            {
+                return IngredientCategory.Meat;
+            }
+
             // Check for eggs
             if (defName.StartsWith("Egg"))
                 return IngredientCategory.Egg;
@@ -91,6 +97,10 @@ namespace CustomFoodNamesMod.Core
             if (defName == "RawFungus" || defName.Contains("Mushroom") ||
                 defName.Contains("Fungus") || defName == "Glowstool")
                 return IngredientCategory.Fungus;
+
+            // Check for potatoes specifically
+            if (defName == "RawPotatoes")
+                return IngredientCategory.Vegetable;
 
             // Default assumption for Raw* is vegetable
             if (defName.StartsWith("Raw"))
@@ -215,8 +225,12 @@ namespace CustomFoodNamesMod.Core
             ingredientCategoryCache["Meat_Human"] = IngredientCategory.Meat; // Now regular meat
             ingredientCategoryCache["Meat_Thrumbo"] = IngredientCategory.Meat; // Now regular meat
 
+            // Handle twisted meat variants
+            ingredientCategoryCache["TwistedMeat"] = IngredientCategory.Meat;
+            ingredientCategoryCache["Meat_Twisted"] = IngredientCategory.Meat;
+
             // Vegetables
-            ingredientCategoryCache["RawPotatoes"] = IngredientCategory.Special;
+            ingredientCategoryCache["RawPotatoes"] = IngredientCategory.Vegetable; // Changed from Special to Vegetable
 
             // Grains
             ingredientCategoryCache["RawRice"] = IngredientCategory.Grain;

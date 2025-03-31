@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using CustomFoodNamesMod.Generators;
 using RimWorld;
 using Verse;
@@ -104,23 +105,36 @@ namespace CustomFoodNamesMod.Batch
                     foreach (var ingredient in usedIngredients)
                     {
                         if (ingredient?.def != null)
+                        {
+                            Log.Message($"[CustomFoodNames] Used ingredient: {ingredient.def.defName} ({ingredient.def.label})");
                             actualIngredients.Add(ingredient.def);
+                        }
                     }
 
                     // Fall back to the CompIngredients if needed
                     if (actualIngredients.Count == 0 && ingredientsComp.ingredients.Count > 0)
                     {
+                        Log.Message($"[CustomFoodNames] Falling back to CompIngredients");
                         actualIngredients.AddRange(ingredientsComp.ingredients);
                     }
 
                     if (actualIngredients.Count == 0)
                     {
                         // No ingredients found, use fallback
+                        Log.Message($"[CustomFoodNames] No ingredients found, using fallback");
                         actualIngredients = DefDatabase<ThingDef>.AllDefs
                             .Where(def => def.defName.StartsWith("Raw") || def.defName.StartsWith("Meat_"))
                             .Take(2)
                             .ToList();
                     }
+
+                    // Check for twisted meat in ingredients
+                    bool hasTwistedMeat = actualIngredients.Any(i =>
+                        i.defName.Contains("TwistedMeat") ||
+                        i.defName.Contains("Meat_Twisted") ||
+                        (i.label != null && i.label.ToLower().Contains("twisted meat")));
+
+                    Log.Message($"[CustomFoodNames] Has twisted meat: {hasTwistedMeat}");
 
                     // Store the ingredients for this batch
                     batchInfo.Ingredients = actualIngredients;
@@ -136,6 +150,15 @@ namespace CustomFoodNamesMod.Batch
                     {
                         var generator = new ProceduralDishNameGenerator();
                         dishName = generator.GenerateName(actualIngredients, meal.def);
+                    }
+
+                    // Check if dish name contains "Twisted" without "Meat"
+                    if (hasTwistedMeat && dishName.Contains("Twisted") && !dishName.Contains("Twisted Meat"))
+                    {
+                        // Fix the name by replacing "Twisted" with "Twisted Meat"
+                        Log.Message($"[CustomFoodNames] Fixing twisted meat in dish name: {dishName}");
+                        dishName = Regex.Replace(dishName, @"\bTwisted\b", "Twisted Meat");
+                        Log.Message($"[CustomFoodNames] Fixed dish name: {dishName}");
                     }
 
                     // Store the name for this job

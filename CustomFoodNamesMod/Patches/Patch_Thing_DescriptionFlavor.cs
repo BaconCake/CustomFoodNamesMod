@@ -5,6 +5,7 @@ using RimWorld;
 using Verse;
 using CustomFoodNamesMod.Utils;
 using CustomFoodNamesMod.Generators;
+using CustomFoodNamesMod.Core;
 
 namespace CustomFoodNamesMod.Patches
 {
@@ -81,20 +82,63 @@ namespace CustomFoodNamesMod.Patches
                 {
                     __result += "\n\n<color=#A9A9A9><i>--- Developer Info ---</i></color>\n";
 
-                    // Add ingredient category information
-                    __result += "<color=#A9A9A9>Ingredient categories: ";
+                    // List all ingredients with their categories
+                    __result += "<color=#A9A9A9>Ingredients:\n";
+                    foreach (var ingredient in compIngredients.ingredients)
+                    {
+                        var category = IngredientCategorizer.GetIngredientCategory(ingredient);
+                        __result += $"- {ingredient.label} ({ingredient.defName}): {category}\n";
+                    }
+
+                    // Add meal properties
+                    bool isVegetarian = IngredientUtils.IsMealVegetarian(compIngredients.ingredients);
+                    bool isCarnivore = IngredientUtils.IsMealCarnivore(compIngredients.ingredients);
+                    __result += $"\nMeal Properties:\n";
+                    __result += $"- Quality: {mealQuality}\n";
+                    __result += $"- Vegetarian: {isVegetarian}\n";
+                    __result += $"- Carnivore: {isCarnivore}\n";
+
+                    // Get primary category of the meal
+                    IngredientCategory primaryCategory = IngredientCategorizer.GetPrimaryMealCategory(compIngredients.ingredients);
+                    __result += $"- Primary Category: {primaryCategory}\n";
+
+                    // List all unique categories present
                     var categories = compIngredients.ingredients
-                        .Select(i => Core.IngredientCategorizer.GetIngredientCategory(i).ToString())
+                        .Select(i => IngredientCategorizer.GetIngredientCategory(i))
                         .Distinct()
                         .ToList();
-                    __result += string.Join(", ", categories);
+                    __result += $"- All Categories: {string.Join(", ", categories)}\n";
 
-                    // Add description source information
-                    __result += "\nDescription source: ";
-                    __result += (dishInfo != null && !string.IsNullOrEmpty(dishInfo.Description))
+                    // Get dominant ingredient
+                    ThingDef dominantIngredient = IngredientCategorizer.GetDominantIngredient(compIngredients.ingredients);
+                    if (dominantIngredient != null)
+                    {
+                        __result += $"- Dominant Ingredient: {dominantIngredient.label} ({dominantIngredient.defName})\n";
+                    }
+
+                    // Add naming source information
+                    __result += "\nNaming Info:\n";
+                    __result += $"- Assigned Name: {customNameComp.AssignedDishName}\n";
+                    __result += $"- Name Source: ";
+                    __result += (dishInfo != null && !string.IsNullOrEmpty(dishInfo.Name))
                         ? "Database (custom)"
                         : "Procedural (generated)";
 
+                    // Add batch job info if possible
+                    if (__instance.def.defName.StartsWith("Meal") && !__instance.def.defName.Contains("NutrientPaste"))
+                    {
+                        var mealTypeInfo = __instance.def.defName.Contains("Lavish") ? "Lavish"
+                            : __instance.def.defName.Contains("Fine") ? "Fine"
+                            : "Simple";
+                        __result += $"\n\nMeal Type: {mealTypeInfo}";
+
+                        if (isVegetarian)
+                            __result += " (Vegetarian)";
+                        else if (isCarnivore)
+                            __result += " (Carnivore)";
+                    }
+
+                    // Close the color tag
                     __result += "</color>";
                 }
             }

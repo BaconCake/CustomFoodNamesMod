@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿using System.Text.RegularExpressions;
+using HarmonyLib;
 using RimWorld;
 using Verse;
 using CustomFoodNamesMod.Batch;
@@ -57,11 +58,28 @@ namespace CustomFoodNamesMod.Patches
 
                             if (compIngredients != null && compIngredients.ingredients.Count > 0)
                             {
+                                // Check for twisted meat
+                                bool hasTwistedMeat = compIngredients.ingredients.Any(i =>
+                                    i.defName.Contains("TwistedMeat") ||
+                                    i.defName.Contains("Meat_Twisted") ||
+                                    (i.label != null && i.label.ToLower().Contains("twisted meat")));
+
                                 // Use the nutrient paste generator
                                 var generator = new NutrientPasteNameGenerator();
                                 customNameComp.AssignedDishName = generator.GenerateName(
                                     compIngredients.ingredients,
                                     __instance.def);
+
+                                // Fix any twisted meat references
+                                if (hasTwistedMeat &&
+                                    customNameComp.AssignedDishName.Contains("Twisted") &&
+                                    !customNameComp.AssignedDishName.Contains("Twisted Meat"))
+                                {
+                                    customNameComp.AssignedDishName = Regex.Replace(
+                                        customNameComp.AssignedDishName,
+                                        @"\bTwisted\b",
+                                        "Twisted Meat");
+                                }
                             }
                             else
                             {
@@ -114,11 +132,28 @@ namespace CustomFoodNamesMod.Patches
 
                             if (compIngredients != null && compIngredients.ingredients.Count > 0)
                             {
+                                // Check for twisted meat
+                                bool hasTwistedMeat = compIngredients.ingredients.Any(i =>
+                                    i.defName.Contains("TwistedMeat") ||
+                                    i.defName.Contains("Meat_Twisted") ||
+                                    (i.label != null && i.label.ToLower().Contains("twisted meat")));
+
                                 // Use the procedural generator
                                 var generator = new ProceduralDishNameGenerator();
                                 customNameComp.AssignedDishName = generator.GenerateName(
                                     compIngredients.ingredients,
                                     __instance.def);
+
+                                // Fix any twisted meat references 
+                                if (hasTwistedMeat &&
+                                    customNameComp.AssignedDishName.Contains("Twisted") &&
+                                    !customNameComp.AssignedDishName.Contains("Twisted Meat"))
+                                {
+                                    customNameComp.AssignedDishName = Regex.Replace(
+                                        customNameComp.AssignedDishName,
+                                        @"\bTwisted\b",
+                                        "Twisted Meat");
+                                }
                             }
                             else
                             {

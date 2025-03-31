@@ -23,7 +23,7 @@ namespace CustomFoodNamesMod.Utils
             var groupedIngredients = ingredients
                 .GroupBy(i => i.defName)
                 .Select(g => new {
-                    Label = StringUtils.CleanIngredientLabel(g.First().label),
+                    Label = GetFormatReadyIngredientLabel(g.First()),
                     Count = g.Count()
                 })
                 .OrderByDescending(x => x.Count)
@@ -48,6 +48,22 @@ namespace CustomFoodNamesMod.Utils
                 return $"{result[0]} and {result[1]}";
 
             return string.Join(", ", result.Take(result.Count - 1)) + ", and " + result.Last();
+        }
+
+        /// <summary>
+        /// Gets a properly formatted label for ingredient lists in descriptions
+        /// </summary>
+        private static string GetFormatReadyIngredientLabel(ThingDef ingredient)
+        {
+            // Special case for twisted meat
+            if (ingredient.defName.Contains("TwistedMeat") ||
+                ingredient.defName.Contains("Meat_Twisted") ||
+                (ingredient.label != null && ingredient.label.ToLower().Contains("twisted meat")))
+            {
+                return "twisted meat";
+            }
+
+            return StringUtils.CleanIngredientLabel(ingredient.label);
         }
 
         /// <summary>
@@ -106,6 +122,7 @@ namespace CustomFoodNamesMod.Utils
             // Focus on things that are actually used in cooking
             bool isRawFood = def.defName.StartsWith("Raw") ||      // RawPotatoes, RawRice, etc.
                              def.defName.StartsWith("Meat_") ||    // Meat_Cow, Meat_Chicken, etc.
+                             def.defName.StartsWith("Twisted") ||  // TwistedMeat, etc.
                              def.defName.StartsWith("Egg") ||      // EggChickenUnfertilized, etc.
                              def.defName == "Milk" ||
                              def.defName == "InsectJelly" ||
