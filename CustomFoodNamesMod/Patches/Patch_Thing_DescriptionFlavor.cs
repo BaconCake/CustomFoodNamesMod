@@ -6,6 +6,7 @@ using Verse;
 using CustomFoodNamesMod.Utils;
 using CustomFoodNamesMod.Generators;
 using CustomFoodNamesMod.Core;
+using System;
 
 namespace CustomFoodNamesMod.Patches
 {
@@ -30,17 +31,44 @@ namespace CustomFoodNamesMod.Patches
                     return;
                 }
 
-                if (customNameComp != null)
+                // EMERGENCY PATCH: Try to recover cook name from saved game data if needed
+                if (customNameComp != null && string.IsNullOrEmpty(customNameComp.CookName))
                 {
-                    Log.Message($"[CustomFoodNames] Generating description for meal: {customNameComp.AssignedDishName}, Cook: {(customNameComp.CookName ?? "not set")}");
-
-                    // Check if cookName is null or empty but the component exists
-                    if (string.IsNullOrEmpty(customNameComp.CookName))
+                    try
                     {
-                        Log.Message("[CustomFoodNames] CookName property is null or empty, but component exists");
+                        // Try to find a pawn that might have cooked this meal
+                        if (__instance.Spawned && __instance.Map != null)
+                        {
+                            // Look for a nearby cook with the cooking skill
+                            var potentialCooks = __instance.Map.mapPawns.AllPawnsSpawned
+                                .Where(p => p.skills?.GetSkill(SkillDefOf.Cooking)?.Level > 0)
+                                .OrderBy(p => p.Position.DistanceTo(__instance.Position))
+                                .Take(1)
+                                .ToList();
+
+                            if (potentialCooks.Count > 0)
+                            {
+                                var nearestCook = potentialCooks[0];
+                                customNameComp.CookName = nearestCook.Name.ToStringShort;
+                                Log.Message($"[CustomFoodNames] EMERGENCY: Recovered cook name from nearby cook: {customNameComp.CookName}");
+                            }
+                            else
+                            {
+                                // Default if no cook found
+                                customNameComp.CookName = "colony chef";
+                                Log.Message("[CustomFoodNames] EMERGENCY: Set default cook name: 'colony chef'");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error($"[CustomFoodNames] Error in emergency cook name recovery: {ex}");
+                        customNameComp.CookName = "unknown chef";
                     }
                 }
 
+                // Initialize customDescription variable 
+                string customDescription = "";
 
                 // Get ingredients from the meal
                 var compIngredients = twc.GetComp<CompIngredients>();
@@ -50,9 +78,6 @@ namespace CustomFoodNamesMod.Patches
                     __result += $"\n\nThis is a {customNameComp.AssignedDishName} with unknown ingredients.";
                     return;
                 }
-
-                // First try to get a custom description from the database
-                string customDescription = null;
 
                 // Determine meal quality
                 string mealQuality = "Simple";
@@ -71,19 +96,21 @@ namespace CustomFoodNamesMod.Patches
                     // We found a custom description in the database
                     customDescription = $"\n\n{dishInfo.Description}";
                 }
-
                 // If no custom description was found, generate one
-                if (string.IsNullOrEmpty(customDescription))
+                else if (__instance.def.defName.Contains("NutrientPaste"))
                 {
-                    if (__instance.def.defName.Contains("NutrientPaste"))
-                    {
-                        var generator = new NutrientPasteNameGenerator();
-                        customDescription = $"\n\n{generator.GenerateDescription(compIngredients.ingredients, __instance.def)}";
-                    }
-                    else
-                    {
-                        customDescription = $"\n\n{GeneratorSelector.GenerateDescription(compIngredients.ingredients, __instance.def)}";
-                    }
+                    var generator = new NutrientPasteNameGenerator();
+                    customDescription = $"\n\n{generator.GenerateDescription(compIngredients.ingredients, __instance.def)}";
+                }
+                else
+                {
+                    customDescription = $"\n\n{GeneratorSelector.GenerateDescription(compIngredients.ingredients, __instance.def)}";
+                }
+
+                // Debug the current cook name value
+                if (customNameComp != null)
+                {
+                    Log.Message($"[CustomFoodNames] Cook name in description: '{customNameComp.CookName}'");
                 }
 
                 // Add cook information if available
@@ -94,6 +121,8 @@ namespace CustomFoodNamesMod.Patches
                 }
                 else
                 {
+                    customDescription += "\n\nPrepared by an unknown chef.";
+
                     // Be more specific about why cook information is missing
                     if (customNameComp == null)
                     {
@@ -154,6 +183,9 @@ namespace CustomFoodNamesMod.Patches
                     __result += (dishInfo != null && !string.IsNullOrEmpty(dishInfo.Name))
                         ? "Database (custom)"
                         : "Procedural (generated)";
+
+                    // Add cook information in dev mode
+                    __result += $"\n- Cook: {(string.IsNullOrEmpty(customNameComp.CookName) ? "None" : customNameComp.CookName)}";
 
                     // Add batch job info if possible
                     if (__instance.def.defName.StartsWith("Meal") && !__instance.def.defName.Contains("NutrientPaste"))
