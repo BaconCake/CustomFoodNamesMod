@@ -14,18 +14,13 @@
     public static class BatchMealHandler
     {
         // Dictionary to store batch meal data by job ID
-
-        /// <summary>
-        /// Defines the batchJobs
-        /// </summary>
         private static Dictionary<int, BatchJobInfo> batchJobs = new Dictionary<int, BatchJobInfo>();
 
         // Track job IDs that have already produced a meal
-
-        /// <summary>
-        /// Defines the activeJobs
-        /// </summary>
         private static HashSet<int> activeJobs = new HashSet<int>();
+
+        // Global tracking of the last cook for use in emergency scenarios
+        private static Dictionary<int, Pawn> mapToLastActiveCook = new Dictionary<int, Pawn>();
 
         /// <summary>
         /// Register a new batch cooking job
@@ -59,6 +54,13 @@
                     HasProducedMeal = false,
                     Cook = worker
                 };
+
+                // Update global cook tracking if we have a valid cook and map
+                if (worker != null && worker.Map != null && worker.skills?.GetSkill(SkillDefOf.Cooking)?.Level > 0)
+                {
+                    mapToLastActiveCook[worker.Map.uniqueID] = worker;
+                    Log.Message($"[CustomFoodNames] Updated last active cook for map {worker.Map.uniqueID}: {worker.Name.ToStringShort}");
+                }
 
                 Log.Message($"[CustomFoodNames] Registered batch job {jobId} for {bill.recipe.ProducedThingDef.defName}, " +
                             $"Cook: {workerName}, Worker null? {worker == null}");
@@ -123,20 +125,23 @@
                 // Set cook name - do this FIRST before any other operations
                 if (batchInfo.Cook != null)
                 {
-                    // Directly set field instead of property
+                    // Store cook name in meal component
                     try
                     {
                         var cookName = batchInfo.Cook.Name.ToStringShort;
                         customNameComp.CookName = cookName;
-                        Log.Message($"[CustomFoodNames] Setting cook name directly: '{cookName}'");
-
-                        // Double-check that it was properly set
-                        Log.Message($"[CustomFoodNames] Cook name after setting: '{customNameComp.CookName}'");
+                        Log.Message($"[CustomFoodNames] Setting cook name directly from batch: '{cookName}'");
                     }
                     catch (Exception ex)
                     {
                         Log.Error($"[CustomFoodNames] Error setting cook name: {ex}");
                     }
+                }
+                else if (meal.Map != null && mapToLastActiveCook.TryGetValue(meal.Map.uniqueID, out Pawn lastCook))
+                {
+                    // Fallback to the last active cook on this map
+                    customNameComp.CookName = lastCook.Name.ToStringShort;
+                    Log.Message($"[CustomFoodNames] Using last active cook for map {meal.Map.uniqueID}: {lastCook.Name.ToStringShort}");
                 }
                 else
                 {
@@ -263,6 +268,79 @@
             }
 
             return null; // No batch ingredients found
+        }
+
+        /// <summary>
+        /// Get the cook for a batch job
+        /// </summary>
+        /// <param name="jobId">The job ID</param>
+        /// <returns>The cook pawn, or null if not found</returns>
+        public static Pawn GetBatchCook(int jobId)
+        {
+            if (batchJobs.TryGetValue(jobId, out var batchInfo))
+            {
+                return batchInfo.Cook;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Get the most reliable cook for a meal, trying different methods
+        /// </summary>
+        /// <param name="meal">The meal item</param>
+        /// <param name="jobId">Optional job ID if known</param>
+        /// <returns>The best cook match, or null if not found</returns>
+        public static Pawn GetBestCookForMeal(Thing meal, int jobId = -1)
+        {
+            // Method 1: Try batch job info if job ID is provided
+            if (jobId > 0)
+            {
+                var batchCook = GetBatchCook(jobId);
+                if (batchCook != null)
+                {
+                    Log.Message($"[CustomFoodNames] Found cook from batch job: {batchCook.Name.ToStringShort}");
+                    return batchCook;
+                }
+            }
+
+            // Method 2: Check if the meal is on a map with a last known cook
+            if (meal.Map != null && mapToLastActiveCook.TryGetValue(meal.Map.uniqueID, out Pawn lastCook))
+            {
+                Log.Message($"[CustomFoodNames] Using last known cook for map: {lastCook.Name.ToStringShort}");
+                return lastCook;
+            }
+
+            // Method 3: Look for pawns currently using cooking stations
+            if (meal.Map != null)
+            {
+                foreach (var pawn in meal.Map.mapPawns.AllPawnsSpawned)
+                {
+                    if (pawn.CurJob?.targetA.Thing?.def.defName.Contains("Stove") == true)
+                    {
+                        Log.Message($"[CustomFoodNames] Found cook at stove: {pawn.Name.ToStringShort}");
+                        return pawn;
+                    }
+                }
+            }
+
+            // Method 4: Last resort - find the closest pawn with cooking skill
+            if (meal.Spawned && meal.Map != null)
+            {
+                var cookingPawns = meal.Map.mapPawns.AllPawnsSpawned
+                    .Where(p => p.skills?.GetSkill(SkillDefOf.Cooking)?.Level > 0)
+                    .OrderBy(p => p.Position.DistanceTo(meal.Position))
+                    .ToList();
+
+                if (cookingPawns.Count > 0)
+                {
+                    var bestCook = cookingPawns[0];
+                    Log.Message($"[CustomFoodNames] Using nearest cook as fallback: {bestCook.Name.ToStringShort}");
+                    return bestCook;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>

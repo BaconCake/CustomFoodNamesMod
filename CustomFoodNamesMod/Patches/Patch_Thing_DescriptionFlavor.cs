@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
 using RimWorld;
@@ -6,13 +7,30 @@ using Verse;
 using CustomFoodNamesMod.Utils;
 using CustomFoodNamesMod.Generators;
 using CustomFoodNamesMod.Core;
-using System;
+using CustomFoodNamesMod.Batch;
 
 namespace CustomFoodNamesMod.Patches
 {
-    [HarmonyPatch(typeof(Thing), "DescriptionFlavor", MethodType.Getter)]
     public static class Patch_Thing_DescriptionFlavor
     {
+        public static void Apply(Harmony harmony)
+        {
+            // Get the original method
+            var original = AccessTools.PropertyGetter(typeof(Thing), nameof(Thing.DescriptionFlavor));
+            if (original == null)
+            {
+                Log.Error("[CustomFoodNames] Failed to find Thing.DescriptionFlavor property getter");
+                return;
+            }
+
+            // Get our postfix method
+            var postfix = AccessTools.Method(typeof(Patch_Thing_DescriptionFlavor), nameof(Postfix));
+
+            // Apply the patch
+            harmony.Patch(original, postfix: new HarmonyMethod(postfix));
+            Log.Message("[CustomFoodNames] Successfully patched Thing.DescriptionFlavor");
+        }
+
         public static void Postfix(ref string __result, Thing __instance)
         {
             // Check if this is a meal item
@@ -31,38 +49,29 @@ namespace CustomFoodNamesMod.Patches
                     return;
                 }
 
-                // EMERGENCY PATCH: Try to recover cook name from saved game data if needed
+                // IMPROVED COOK DETECTION: Use the improved tracking system for cook information
                 if (customNameComp != null && string.IsNullOrEmpty(customNameComp.CookName))
                 {
                     try
                     {
-                        // Try to find a pawn that might have cooked this meal
-                        if (__instance.Spawned && __instance.Map != null)
-                        {
-                            // Look for a nearby cook with the cooking skill
-                            var potentialCooks = __instance.Map.mapPawns.AllPawnsSpawned
-                                .Where(p => p.skills?.GetSkill(SkillDefOf.Cooking)?.Level > 0)
-                                .OrderBy(p => p.Position.DistanceTo(__instance.Position))
-                                .Take(1)
-                                .ToList();
+                        // Use our improved cook finder
+                        Pawn bestCook = BatchMealHandler.GetBestCookForMeal(__instance);
 
-                            if (potentialCooks.Count > 0)
-                            {
-                                var nearestCook = potentialCooks[0];
-                                customNameComp.CookName = nearestCook.Name.ToStringShort;
-                                Log.Message($"[CustomFoodNames] EMERGENCY: Recovered cook name from nearby cook: {customNameComp.CookName}");
-                            }
-                            else
-                            {
-                                // Default if no cook found
-                                customNameComp.CookName = "colony chef";
-                                Log.Message("[CustomFoodNames] EMERGENCY: Set default cook name: 'colony chef'");
-                            }
+                        if (bestCook != null)
+                        {
+                            customNameComp.CookName = bestCook.Name.ToStringShort;
+                            Log.Message($"[CustomFoodNames] IMPROVED: Set cook name to {customNameComp.CookName}");
+                        }
+                        else
+                        {
+                            // Default if no cook found
+                            customNameComp.CookName = "colony chef";
+                            Log.Message("[CustomFoodNames] IMPROVED: Set default cook name: 'colony chef'");
                         }
                     }
                     catch (Exception ex)
                     {
-                        Log.Error($"[CustomFoodNames] Error in emergency cook name recovery: {ex}");
+                        Log.Error($"[CustomFoodNames] Error in improved cook detection: {ex}");
                         customNameComp.CookName = "unknown chef";
                     }
                 }

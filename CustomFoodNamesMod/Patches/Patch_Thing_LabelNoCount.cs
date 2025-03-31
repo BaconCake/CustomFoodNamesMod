@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.Text.RegularExpressions;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -7,9 +8,26 @@ using CustomFoodNamesMod.Generators;
 
 namespace CustomFoodNamesMod.Patches
 {
-    [HarmonyPatch(typeof(Thing), "LabelNoCount", MethodType.Getter)]
     public static class Patch_Thing_LabelNoCount
     {
+        public static void Apply(Harmony harmony)
+        {
+            // Get the original method
+            var original = AccessTools.PropertyGetter(typeof(Thing), nameof(Thing.LabelNoCount));
+            if (original == null)
+            {
+                Log.Error("[CustomFoodNames] Failed to find Thing.LabelNoCount property getter");
+                return;
+            }
+
+            // Get our postfix method
+            var postfix = AccessTools.Method(typeof(Patch_Thing_LabelNoCount), nameof(Postfix));
+
+            // Apply the patch
+            harmony.Patch(original, postfix: new HarmonyMethod(postfix));
+            Log.Message("[CustomFoodNames] Successfully patched Thing.LabelNoCount");
+        }
+
         public static void Postfix(ref string __result, Thing __instance)
         {
             // Check if it's a food item
@@ -37,10 +55,25 @@ namespace CustomFoodNamesMod.Patches
                     if (string.IsNullOrEmpty(customNameComp.AssignedDishName))
                     {
                         // Check if this meal is part of a batch job
-                        Pawn worker = GetCookingPawn(__instance);
-                        if (worker != null && worker.CurJob != null)
+                        Pawn worker = null;
+                        int jobId = -1;
+
+                        // Try to find a worker with an active cooking job
+                        if (__instance.Map != null)
                         {
-                            int jobId = worker.CurJob.loadID;
+                            foreach (var pawn in __instance.Map.mapPawns.AllPawnsSpawned)
+                            {
+                                if (pawn.CurJob?.bill?.recipe?.ProducedThingDef?.defName == __instance.def.defName)
+                                {
+                                    worker = pawn;
+                                    jobId = pawn.CurJob.loadID;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (jobId > 0)
+                        {
                             string batchName = BatchMealHandler.GetBatchMealName(jobId);
 
                             if (!string.IsNullOrEmpty(batchName))
@@ -54,7 +87,7 @@ namespace CustomFoodNamesMod.Patches
                         if (string.IsNullOrEmpty(customNameComp.AssignedDishName))
                         {
                             // Get ingredients from the meal
-                            var compIngredients = twc.TryGetComp<CompIngredients>();
+                            var compIngredients = twc.GetComp<CompIngredients>();
 
                             if (compIngredients != null && compIngredients.ingredients.Count > 0)
                             {
@@ -87,19 +120,21 @@ namespace CustomFoodNamesMod.Patches
                             }
                         }
 
+                        // IMPROVED COOK TRACKING
                         if (string.IsNullOrEmpty(customNameComp.CookName))
                         {
-                            // Try to find a cook
-                            Pawn cookingPawn = GetCookingPawn(__instance);
-                            if (cookingPawn != null)
+                            // Try to find the most appropriate cook using our enhanced system
+                            Pawn bestCook = BatchMealHandler.GetBestCookForMeal(__instance, worker?.CurJob?.loadID ?? -1);
+
+                            if (bestCook != null)
                             {
-                                customNameComp.CookName = cookingPawn.Name.ToStringShort;
-                                Log.Message($"[CustomFoodNames] Set cook name in LabelNoCount: {customNameComp.CookName}");
+                                customNameComp.CookName = bestCook.Name.ToStringShort;
+                                Log.Message($"[CustomFoodNames] Set cook name in LabelNoCount using improved system: {customNameComp.CookName}");
                             }
                             else
                             {
-                                customNameComp.CookName = "unknown chef";
-                                Log.Message("[CustomFoodNames] Set default cook name in LabelNoCount");
+                                customNameComp.CookName = "colony chef";
+                                Log.Message("[CustomFoodNames] Set default cook name in LabelNoCount: 'colony chef'");
                             }
                         }
                     }
@@ -127,10 +162,25 @@ namespace CustomFoodNamesMod.Patches
                     if (string.IsNullOrEmpty(customNameComp.AssignedDishName))
                     {
                         // Check if this meal is part of a batch job
-                        Pawn worker = GetCookingPawn(__instance);
-                        if (worker != null && worker.CurJob != null)
+                        Pawn worker = null;
+                        int jobId = -1;
+
+                        // Try to find a worker with an active cooking job
+                        if (__instance.Map != null)
                         {
-                            int jobId = worker.CurJob.loadID;
+                            foreach (var pawn in __instance.Map.mapPawns.AllPawnsSpawned)
+                            {
+                                if (pawn.CurJob?.bill?.recipe?.ProducedThingDef?.defName == __instance.def.defName)
+                                {
+                                    worker = pawn;
+                                    jobId = pawn.CurJob.loadID;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (jobId > 0)
+                        {
                             string batchName = BatchMealHandler.GetBatchMealName(jobId);
 
                             if (!string.IsNullOrEmpty(batchName))
@@ -144,7 +194,7 @@ namespace CustomFoodNamesMod.Patches
                         if (string.IsNullOrEmpty(customNameComp.AssignedDishName))
                         {
                             // Get ingredients from the meal
-                            var compIngredients = twc.TryGetComp<CompIngredients>();
+                            var compIngredients = twc.GetComp<CompIngredients>();
 
                             if (compIngredients != null && compIngredients.ingredients.Count > 0)
                             {
@@ -176,6 +226,24 @@ namespace CustomFoodNamesMod.Patches
                                 customNameComp.AssignedDishName = "Mystery Meal";
                             }
                         }
+
+                        // IMPROVED COOK TRACKING
+                        if (string.IsNullOrEmpty(customNameComp.CookName))
+                        {
+                            // Try to find the most appropriate cook using our enhanced system
+                            Pawn bestCook = BatchMealHandler.GetBestCookForMeal(__instance, worker?.CurJob?.loadID ?? -1);
+
+                            if (bestCook != null)
+                            {
+                                customNameComp.CookName = bestCook.Name.ToStringShort;
+                                Log.Message($"[CustomFoodNames] Set cook name in LabelNoCount using improved system: {customNameComp.CookName}");
+                            }
+                            else
+                            {
+                                customNameComp.CookName = "colony chef";
+                                Log.Message("[CustomFoodNames] Set default cook name in LabelNoCount: 'colony chef'");
+                            }
+                        }
                     }
 
                     // Append the stored name for regular meals
@@ -184,37 +252,18 @@ namespace CustomFoodNamesMod.Patches
             }
         }
 
-        // Helper method to try to find the pawn that's cooking this meal
+        // Helper method to try to find the pawn that's cooking this meal - Kept for compatibility
         private static Pawn GetCookingPawn(Thing meal)
         {
             try
             {
-                // This is a simplistic approach - in a real implementation, we might need 
-                // more sophisticated logic to find the cooking pawn
-                var position = meal.Position;
-                var map = meal.Map;
-
-                if (map != null)
-                {
-                    // Look for a pawn doing a cooking job at this position
-                    var pawns = map.mapPawns.AllPawns;
-                    foreach (var pawn in pawns)
-                    {
-                        if (pawn.CurJob != null &&
-                            pawn.CurJob.targetA.Thing != null &&
-                            pawn.CurJob.targetA.Thing.def.defName.Contains("Stove"))
-                        {
-                            return pawn;
-                        }
-                    }
-                }
+                return BatchMealHandler.GetBestCookForMeal(meal);
             }
-            catch (System.Exception)
+            catch (Exception)
             {
                 // Ignore errors in this helper method
+                return null;
             }
-
-            return null;
         }
     }
 }

@@ -1,21 +1,45 @@
-﻿using HarmonyLib;
-using RimWorld;
-using Verse;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Verse.AI;
-using CustomFoodNamesMod.Batch;
-
-namespace CustomFoodNamesMod.Patches
+﻿namespace CustomFoodNamesMod.Patches
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using CustomFoodNamesMod.Batch;
+    using HarmonyLib;
+    using RimWorld;
+    using Verse;
+    using Verse.AI;
+
     /// <summary>
     /// Patch cooking job setup to register batch jobs
     /// </summary>
-    [HarmonyPatch(typeof(JobDriver_DoBill))]
-    [HarmonyPatch("MakeNewToils")]
     public static class Patch_JobDriver_DoBill_MakeNewToils
     {
+        /// <summary>
+        /// The Apply
+        /// </summary>
+        /// <param name="harmony">The harmony<see cref="Harmony"/></param>
+        public static void Apply(Harmony harmony)
+        {
+            // Get the original method
+            var original = AccessTools.Method(typeof(JobDriver_DoBill), "MakeNewToils");
+            if (original == null)
+            {
+                Log.Error("[CustomFoodNames] Failed to find JobDriver_DoBill.MakeNewToils method");
+                return;
+            }
+
+            // Get our postfix method
+            var postfix = AccessTools.Method(typeof(Patch_JobDriver_DoBill_MakeNewToils), nameof(Postfix));
+
+            // Apply the patch
+            harmony.Patch(original, postfix: new HarmonyMethod(postfix));
+            Log.Message("[CustomFoodNames] Successfully patched JobDriver_DoBill.MakeNewToils");
+        }
+
+        /// <summary>
+        /// The Postfix
+        /// </summary>
+        /// <param name="__instance">The __instance<see cref="JobDriver_DoBill"/></param>
         public static void Postfix(JobDriver_DoBill __instance)
         {
             try
@@ -53,6 +77,11 @@ namespace CustomFoodNamesMod.Patches
             }
         }
 
+        /// <summary>
+        /// The IsCookingJob
+        /// </summary>
+        /// <param name="bill">The bill<see cref="Bill"/></param>
+        /// <returns>The <see cref="bool"/></returns>
         private static bool IsCookingJob(Bill bill)
         {
             if (bill?.recipe?.ProducedThingDef == null)
@@ -71,10 +100,37 @@ namespace CustomFoodNamesMod.Patches
     /// <summary>
     /// Patch recipe product creation to assign batch names using actual ingredients used
     /// </summary>
-    [HarmonyPatch(typeof(GenRecipe))]
-    [HarmonyPatch("MakeRecipeProducts")]
     public static class Patch_GenRecipe_MakeRecipeProducts
     {
+        /// <summary>
+        /// The Apply
+        /// </summary>
+        /// <param name="harmony">The harmony<see cref="Harmony"/></param>
+        public static void Apply(Harmony harmony)
+        {
+            // Get the original method
+            var original = AccessTools.Method(typeof(GenRecipe), "MakeRecipeProducts");
+            if (original == null)
+            {
+                Log.Error("[CustomFoodNames] Failed to find GenRecipe.MakeRecipeProducts method");
+                return;
+            }
+
+            // Get our postfix method
+            var postfix = AccessTools.Method(typeof(Patch_GenRecipe_MakeRecipeProducts), nameof(Postfix));
+
+            // Apply the patch
+            harmony.Patch(original, postfix: new HarmonyMethod(postfix));
+            Log.Message("[CustomFoodNames] Successfully patched GenRecipe.MakeRecipeProducts");
+        }
+
+        /// <summary>
+        /// The Postfix
+        /// </summary>
+        /// <param name="__result">The __result<see cref="IEnumerable{Thing}"/></param>
+        /// <param name="recipeDef">The recipeDef<see cref="RecipeDef"/></param>
+        /// <param name="worker">The worker<see cref="Pawn"/></param>
+        /// <param name="ingredients">The ingredients<see cref="List{Thing}"/></param>
         public static void Postfix(IEnumerable<Thing> __result, RecipeDef recipeDef, Pawn worker, List<Thing> ingredients)
         {
             try
@@ -88,7 +144,6 @@ namespace CustomFoodNamesMod.Patches
 
                 // Log the worker info
                 Log.Message($"[CustomFoodNames] Worker processing meal: {worker.Name.ToStringShort}, JobID: {worker.CurJob.loadID}");
-
 
                 // Skip if not a meal recipe
                 if (recipeDef?.ProducedThingDef == null ||
@@ -125,10 +180,34 @@ namespace CustomFoodNamesMod.Patches
     /// <summary>
     /// Patch job end to clean up batch data when cooking is done
     /// </summary>
-    [HarmonyPatch(typeof(Pawn_JobTracker))]
-    [HarmonyPatch("EndCurrentJob")]
     public static class Patch_Pawn_JobTracker_EndCurrentJob
     {
+        /// <summary>
+        /// The Apply
+        /// </summary>
+        /// <param name="harmony">The harmony<see cref="Harmony"/></param>
+        public static void Apply(Harmony harmony)
+        {
+            // Get the original method
+            var original = AccessTools.Method(typeof(Pawn_JobTracker), "EndCurrentJob");
+            if (original == null)
+            {
+                Log.Error("[CustomFoodNames] Failed to find Pawn_JobTracker.EndCurrentJob method");
+                return;
+            }
+
+            // Get our prefix method
+            var prefix = AccessTools.Method(typeof(Patch_Pawn_JobTracker_EndCurrentJob), nameof(Prefix));
+
+            // Apply the patch
+            harmony.Patch(original, prefix: new HarmonyMethod(prefix));
+            Log.Message("[CustomFoodNames] Successfully patched Pawn_JobTracker.EndCurrentJob");
+        }
+
+        /// <summary>
+        /// The Prefix
+        /// </summary>
+        /// <param name="__instance">The __instance<see cref="Pawn_JobTracker"/></param>
         public static void Prefix(Pawn_JobTracker __instance)
         {
             try
@@ -152,6 +231,11 @@ namespace CustomFoodNamesMod.Patches
             }
         }
 
+        /// <summary>
+        /// The IsCookingBill
+        /// </summary>
+        /// <param name="bill">The bill<see cref="Bill"/></param>
+        /// <returns>The <see cref="bool"/></returns>
         private static bool IsCookingBill(Bill bill)
         {
             if (bill?.recipe?.ProducedThingDef == null)

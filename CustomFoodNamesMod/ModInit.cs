@@ -12,11 +12,18 @@ namespace CustomFoodNamesMod
 
             var harmony = new Harmony("com.myfoodmod.patch");
 
-            // Apply the manual patch for MergeIngredients
+            // Apply only the manual patches
             Patch_CompIngredients_MergeIngredients.Apply(harmony);
 
-            // Patch everything else automatically
-            harmony.PatchAll();
+            // Don't use PatchAll which is causing problems
+            // harmony.PatchAll();
+
+            // Apply each patch manually instead
+            Patch_Thing_LabelNoCount.Apply(harmony);
+            Patch_Thing_DescriptionFlavor.Apply(harmony);
+            Patch_JobDriver_DoBill_MakeNewToils.Apply(harmony);
+            Patch_GenRecipe_MakeRecipeProducts.Apply(harmony);
+            Patch_Pawn_JobTracker_EndCurrentJob.Apply(harmony);
 
             // Force load the dish name database to verify it's working
             DishNameDatabase.LoadDatabase();

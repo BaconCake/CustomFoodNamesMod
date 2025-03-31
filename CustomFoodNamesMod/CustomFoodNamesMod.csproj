@@ -66,8 +66,6 @@
     <Compile Include="Core\IngredientCategorizer.cs" />
     <Compile Include="Generators\GeneratorSelector.cs" />
     <Compile Include="Generators\NameGeneratorBase.cs" />
-    <Compile Include="Patches\Patch_ThingWithComps_ExposeData.cs" />
-    <Compile Include="Patches\Patch_ThingWithComps_PostPostMake.cs" />
     <Compile Include="Utils\IngredientFinder.cs" />
     <Compile Include="ModInit.cs" />
     <Compile Include="Generators\NutrientPasteNameGenerator.cs" />
