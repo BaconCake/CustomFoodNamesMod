@@ -27,12 +27,25 @@ namespace CustomFoodNamesMod.Patches
                 var job = __instance.job;
                 var bill = job.bill;
 
+                // Get the pawn doing the job
+                Pawn worker = __instance.pawn;
+
                 // Only care about cooking jobs
                 if (!IsCookingJob(bill))
                     return;
 
                 // Register this as a batch cooking job
-                BatchMealHandler.RegisterBatchJob(job.loadID, bill);
+                BatchMealHandler.RegisterBatchJob(job.loadID, bill, worker);
+
+                // Log the worker information
+                if (worker != null)
+                {
+                    Log.Message($"[CustomFoodNames] Job registered with worker: {worker.Name.ToStringShort}");
+                }
+                else
+                {
+                    Log.Message("[CustomFoodNames] No worker found for cooking job");
+                }
             }
             catch (Exception ex)
             {
@@ -68,7 +81,14 @@ namespace CustomFoodNamesMod.Patches
             {
                 // Basic null checks
                 if (__result == null || worker == null || worker.CurJob == null || ingredients == null)
+                {
+                    Log.Message("[CustomFoodNames] Null check failed in Patch_GenRecipe_MakeRecipeProducts");
                     return;
+                }
+
+                // Log the worker info
+                Log.Message($"[CustomFoodNames] Worker processing meal: {worker.Name.ToStringShort}, JobID: {worker.CurJob.loadID}");
+
 
                 // Skip if not a meal recipe
                 if (recipeDef?.ProducedThingDef == null ||

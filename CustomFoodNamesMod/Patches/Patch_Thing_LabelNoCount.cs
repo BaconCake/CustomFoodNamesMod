@@ -86,6 +86,22 @@ namespace CustomFoodNamesMod.Patches
                                 customNameComp.AssignedDishName = "Mystery Nutrient Paste";
                             }
                         }
+
+                        if (string.IsNullOrEmpty(customNameComp.CookName))
+                        {
+                            // Try to find a cook
+                            Pawn cookingPawn = GetCookingPawn(__instance);
+                            if (cookingPawn != null)
+                            {
+                                customNameComp.CookName = cookingPawn.Name.ToStringShort;
+                                Log.Message($"[CustomFoodNames] Set cook name in LabelNoCount: {customNameComp.CookName}");
+                            }
+                            else
+                            {
+                                customNameComp.CookName = "unknown chef";
+                                Log.Message("[CustomFoodNames] Set default cook name in LabelNoCount");
+                            }
+                        }
                     }
 
                     // Replace the entire name with our custom name for nutrient paste

@@ -22,7 +22,7 @@ namespace CustomFoodNamesMod.Batch
         /// <summary>
         /// Register a new batch cooking job
         /// </summary>
-        public static void RegisterBatchJob(int jobId, Bill bill)
+        public static void RegisterBatchJob(int jobId, Bill bill, Pawn worker = null)
         {
             if (bill?.recipe?.ProducedThingDef == null)
                 return;
@@ -42,10 +42,11 @@ namespace CustomFoodNamesMod.Batch
                     JobId = jobId,
                     MealDef = bill.recipe.ProducedThingDef,
                     Ingredients = new List<ThingDef>(),
-                    HasProducedMeal = false
+                    HasProducedMeal = false,
+                    Cook = worker // Using the worker parameter directly
                 };
 
-                Log.Message($"[CustomFoodNames] Registered batch job {jobId} for {bill.recipe.ProducedThingDef.defName}");
+                Log.Message($"[CustomFoodNames] Registered batch job {jobId} for {bill.recipe.ProducedThingDef.defName}, Cook: {(worker != null ? worker.Name.ToStringShort : "unknown")}");
             }
             catch (Exception ex)
             {
@@ -60,6 +61,8 @@ namespace CustomFoodNamesMod.Batch
         {
             if (meal == null || !activeJobs.Contains(jobId))
                 return;
+
+
 
             try
             {
@@ -87,6 +90,7 @@ namespace CustomFoodNamesMod.Batch
                 BatchJobInfo batchInfo;
                 if (!batchJobs.TryGetValue(jobId, out batchInfo))
                 {
+                    Log.Message($"[CustomFoodNames] No batch job info found for job {jobId}");
                     batchInfo = new BatchJobInfo
                     {
                         JobId = jobId,
@@ -96,6 +100,8 @@ namespace CustomFoodNamesMod.Batch
                     };
                     batchJobs[jobId] = batchInfo;
                 }
+
+                Log.Message($"[CustomFoodNames] Processing meal for job {jobId}, Cook: {(batchInfo.Cook != null ? batchInfo.Cook.Name.ToStringShort : "unknown")}");
 
                 // If this is the first meal from this job, generate a name
                 if (!batchInfo.HasProducedMeal)
@@ -170,8 +176,22 @@ namespace CustomFoodNamesMod.Batch
 
                 // Assign the batch name to this meal
                 customNameComp.AssignedDishName = batchInfo.DishName;
+                // Assign the cooks name to this meal
+                customNameComp.CookName = batchInfo.Cook?.Name.ToStringShort ?? "unknown chef";
 
                 Log.Message($"[CustomFoodNames] Assigned batch name '{batchInfo.DishName}' to meal from job {jobId}");
+
+                // Store cook information
+                if (batchInfo.Cook != null)
+                {
+                    customNameComp.CookName = batchInfo.Cook.Name.ToStringShort;
+                    Log.Message($"[CustomFoodNames] Assigned cook name: {customNameComp.CookName} to meal");
+                }
+                else
+                {
+                    customNameComp.CookName = "unknown chef";
+                    Log.Message("[CustomFoodNames] Assigned default 'unknown chef' name");
+                }
             }
             catch (Exception ex)
             {

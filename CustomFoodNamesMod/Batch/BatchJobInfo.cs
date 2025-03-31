@@ -32,5 +32,7 @@ namespace CustomFoodNamesMod.Batch
         /// Whether this batch has already produced at least one meal
         /// </summary>
         public bool HasProducedMeal { get; set; }
+
+        public Pawn Cook { get; set; }
     }
 }

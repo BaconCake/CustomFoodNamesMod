@@ -30,6 +30,18 @@ namespace CustomFoodNamesMod.Patches
                     return;
                 }
 
+                if (customNameComp != null)
+                {
+                    Log.Message($"[CustomFoodNames] Generating description for meal: {customNameComp.AssignedDishName}, Cook: {(customNameComp.CookName ?? "not set")}");
+
+                    // Check if cookName is null or empty but the component exists
+                    if (string.IsNullOrEmpty(customNameComp.CookName))
+                    {
+                        Log.Message("[CustomFoodNames] CookName property is null or empty, but component exists");
+                    }
+                }
+
+
                 // Get ingredients from the meal
                 var compIngredients = twc.GetComp<CompIngredients>();
                 if (compIngredients == null || compIngredients.ingredients.Count == 0)
@@ -71,6 +83,25 @@ namespace CustomFoodNamesMod.Patches
                     else
                     {
                         customDescription = $"\n\n{GeneratorSelector.GenerateDescription(compIngredients.ingredients, __instance.def)}";
+                    }
+                }
+
+                // Add cook information if available
+                if (customNameComp != null && !string.IsNullOrEmpty(customNameComp.CookName))
+                {
+                    customDescription += $"\n\nPrepared by chef {customNameComp.CookName}.";
+                    Log.Message($"[CustomFoodNames] Added cook information to description: {customNameComp.CookName}");
+                }
+                else
+                {
+                    // Be more specific about why cook information is missing
+                    if (customNameComp == null)
+                    {
+                        Log.Message("[CustomFoodNames] No custom name component found");
+                    }
+                    else
+                    {
+                        Log.Message("[CustomFoodNames] No cook information available for this meal");
                     }
                 }
 
